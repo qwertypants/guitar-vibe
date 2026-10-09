@@ -1,0 +1,23 @@
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+.superpowers/
+/docs/
+
+# Dependencies and generated output
+/node_modules/
+/.next/
+/out/
+/coverage/
+/playwright-report/
+/test-results/
+*.tsbuildinfo
+next-env.d.ts
+
+# Local credentials. Only the empty template is versioned.
+.env*
+!.env.example
+*.pem
+
+# Local logs and operating-system files
+npm-debug.log*
+.DS_Store
