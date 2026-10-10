@@ -2,6 +2,7 @@
 set -euo pipefail
 
 service_name="guitar-vibe"
+port=3100
 unit_path="/etc/systemd/system/${service_name}.service"
 app_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 service_user="$(id -un)"
@@ -39,8 +40,8 @@ if sudo systemctl cat "${service_name}.service" >/dev/null 2>&1; then
   fail "${service_name}.service already exists; inspect it before changing the existing service."
 fi
 
-if command -v ss >/dev/null 2>&1 && ss -ltnH | awk '{print $4}' | grep -Eq ':3000$'; then
-  fail "TCP port 3000 is already in use; stop the existing server before enabling the production service."
+if command -v ss >/dev/null 2>&1 && ss -ltnH | awk '{print $4}' | grep -Eq ":${port}$"; then
+  fail "TCP port ${port} is already in use; stop the existing server or choose another port before enabling the production service."
 fi
 
 node_bin_dir="$(dirname -- "$node_bin")"
@@ -59,7 +60,7 @@ Type=simple
 User=${service_user}
 WorkingDirectory=${app_dir}
 Environment=NODE_ENV=production
-Environment=PORT=3000
+Environment=PORT=${port}
 Environment=PATH=${node_bin_dir}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ExecStart=${npm_bin} run start:pi
 Restart=on-failure
@@ -81,10 +82,22 @@ if ! sudo systemctl is-active --quiet "${service_name}.service"; then
   fail "the service did not become active."
 fi
 
-if ! curl --fail --silent --show-error --max-time 5 http://127.0.0.1:3000/ >/dev/null; then
+http_ready=false
+for ((attempt = 0; attempt < 30; attempt += 1)); do
+  if curl --fail --silent --max-time 2 "http://127.0.0.1:${port}/" >/dev/null 2>&1; then
+    http_ready=true
+    break
+  fi
+  if ! sudo systemctl is-active --quiet "${service_name}.service"; then
+    break
+  fi
+  sleep 1
+done
+
+if [[ "$http_ready" != true ]]; then
   sudo journalctl -u "${service_name}.service" -n 60 --no-pager || true
-  fail "the service is active but did not answer HTTP at http://127.0.0.1:3000/."
+  fail "the service did not answer HTTP at http://127.0.0.1:${port}/ within 30 seconds."
 fi
 
 printf 'Installed and started %s.service for %s.\n' "$service_name" "$app_dir"
-printf 'Open http://<pi-ip>:3000 from a device on the same network.\n'
+printf 'Open http://<pi-ip>:%s from a device on the same network.\n' "$port"

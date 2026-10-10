@@ -61,11 +61,22 @@ bash deploy/install-pi-service.sh
 ```
 
 The installer registers `guitar-vibe.service` for the current checkout and
-SSH user, enables it at boot, starts it, and checks its local HTTP response. It
-uses `sudo` for the systemd operations and refuses to replace an existing
-service with that name. After installation, open `http://<pi-ip>:3000` from a
-device on the same network. Allow TCP port 3000 through the Pi's firewall if
-one is enabled.
+SSH user, enables it at boot, starts it, and waits up to 30 seconds for its
+local HTTP response. It uses `sudo` for systemd operations, checks that TCP
+port 3100 is free, and refuses to replace an existing service with that name.
+After installation, open `http://<pi-ip>:3100` from a device on the same
+network. Allow TCP port 3100 through the Pi's firewall if one is enabled.
+
+For a service installed earlier on port 3000, update its unit after pulling
+these changes and rebuilding. First confirm port 3100 is unused on the Pi; no
+output from this command means no listener currently owns it:
+
+```sh
+ss -ltnH | awk '{print $4}' | grep -E ':3100$'
+sudo sed -i 's/^Environment=PORT=3000$/Environment=PORT=3100/' /etc/systemd/system/guitar-vibe.service
+sudo systemctl daemon-reload
+sudo systemctl restart guitar-vibe
+```
 
 To update the app, update the checkout, run `npm ci` and `npm run build`, then
 restart it with `sudo systemctl restart guitar-vibe`. View service logs with
