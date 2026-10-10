@@ -28,7 +28,7 @@ test("groups every position in one ordered progression with individual previews"
   selected.forEach((voicing, index) => {
     const position = positions[index];
     if (!position) throw new Error(`Missing position ${index + 1}`);
-    expect(within(position).getByText(`Position ${index + 1}`)).toBeVisible();
+    expect(within(position).queryByText(`Position ${index + 1}`)).not.toBeInTheDocument();
     expect(within(position).getByRole("button", {
       name: `Preview ${voicing.chord}, ${voicing.label}, position ${index + 1}`,
     })).toBeEnabled();
@@ -46,12 +46,15 @@ test("accessible controls switch modes, stop on selection/regeneration and relea
   fireEvent.click(screen.getByRole("button", { name: /Preview C, Open position, position 1/ }));
   await waitFor(() => expect(audio.play).toHaveBeenCalledWith(selected[0].midiNotes, 1200));
   expect(screen.getByRole("button", { name: /Stop C, Open position/ })).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getByText("Previewing this chord")).toBeVisible();
+  expect(screen.getByRole("status")).toHaveTextContent("Playing chord preview.");
   fireEvent.click(screen.getByRole("button", { name: "Play progression" }));
-  await waitFor(() => expect(screen.getByText("Playing this progression position")).toBeVisible());
+  await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Playing position 1"));
   expect(screen.getByRole("button", { name: "Stop progression" })).toHaveAttribute("aria-pressed", "true");
   fireEvent.click(screen.getByRole("button", { name: "Stop progression" }));
   expect(screen.getByRole("status")).toHaveTextContent("Playback stopped.");
+  await act(async () => { await controller.sequence(selected); });
+  rerender(<StrictMode><PlaybackControls voicings={selected} active={false} createController={() => controller} /></StrictMode>);
+  expect(controller.getState().kind).toBe("idle");
   await act(async () => { await controller.sequence(selected); });
   rerender(<StrictMode><PlaybackControls voicings={voicings("G")} createController={() => controller} /></StrictMode>);
   expect(controller.getState().kind).toBe("idle");

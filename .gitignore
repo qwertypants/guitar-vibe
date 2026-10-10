@@ -6,6 +6,7 @@
 # Dependencies and generated output
 /node_modules/
 /.next/
+/.worktrees/
 /out/
 /coverage/
 /playwright-report/

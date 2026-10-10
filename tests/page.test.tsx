@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { resolveProgression } from "@/lib/progression";
 import Home from "@/app/page";
 
 beforeEach(() => {
@@ -75,4 +76,37 @@ test("Reset stays disabled while a generation request is pending", async () => {
   expect(screen.getByRole("menuitem", { name: "Reset selection" })).toBeDisabled();
   resolveRequest?.({ ok: false, json: async () => ({ error: "Try again" }) } as Response);
   await waitFor(() => expect(screen.getByRole("menuitem", { name: "Reset selection" })).toBeEnabled());
+});
+
+
+test("generation opens Play, position buttons update diagrams, and a failed replacement preserves the last chords", async () => {
+  const chords = resolveProgression(["C", "Am", "G"]);
+  if (!chords) throw new Error("Missing progression fixture");
+  vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({ chords })))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ error: "Try again" }), { status: 502 }));
+  render(<Home />);
+  fireEvent.click(screen.getByRole("button", { name: "Moody" }));
+  fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
+  await waitFor(() => expect(screen.getByRole("tab", { name: "Play", selected: true })).toBeVisible());
+  const group = screen.getByRole("group", { name: "Guitar position for C, chord 1" });
+  const alternate = within(group).getByRole("button", { name: "Fret 8 (E-shape)" });
+  alternate.focus();
+  fireEvent.click(alternate);
+  expect(alternate).toHaveFocus();
+  expect(alternate).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("img", { name: "C, Fret 8 (E-shape), guitar chord diagram" })).toBeVisible();
+  expect(screen.getAllByText("Low E string:").length).toBeGreaterThan(0);
+  expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Edit vibe" }));
+  fireEvent.click(screen.getByRole("tab", { name: /Mood/ }));
+  fireEvent.keyDown(screen.getByRole("tab", { name: /Mood/ }), { key: "ArrowRight" });
+  expect(screen.getByRole("tab", { name: "Choose vibe" })).toHaveAttribute("aria-selected", "true");
+  expect(alternate).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(screen.getByRole("tab", { name: /Mood/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Dreamy" }));
+  fireEvent.click(screen.getByRole("button", { name: "Generate another" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Try again");
+  fireEvent.click(screen.getByRole("tab", { name: "Play" }));
+  expect(screen.getByRole("heading", { name: "Your chord progression" })).toBeVisible();
+  expect(screen.getByRole("tabpanel", { name: "Play" })).toHaveTextContent("Moody");
 });

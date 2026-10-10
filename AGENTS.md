@@ -1,3 +1,10 @@
+## Version control
+
+- Use normal Git for inspection, branches, commits, and history operations.
+- Preserve other agents' work and existing user changes. Stage only files or hunks owned by the current task.
+- Inspect `git status --short` and `git diff` before committing. Keep unrelated changes in separate commits.
+- Do not push or open pull requests unless the user asks. Ask before rewriting shared history.
+
 <!-- graft:start -->
 ## Graft — repo context graph
 

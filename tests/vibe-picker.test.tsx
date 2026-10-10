@@ -1,140 +1,57 @@
 import { useState } from "react";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { expect, test, vi } from "vitest";
 import { VibePicker } from "@/components/VibePicker";
 import type { VibeSelection } from "@/lib/vibe-selection";
-
-let mobile = false;
-let mediaListener: (() => void) | undefined;
-
-beforeEach(() => {
-  mobile = false;
-  mediaListener = undefined;
-  vi.stubGlobal("matchMedia", vi.fn(() => ({
-    get matches() { return mobile; },
-    addEventListener: (_type: string, listener: () => void) => { mediaListener = listener; },
-    removeEventListener: () => { mediaListener = undefined; },
-  })));
-  HTMLDialogElement.prototype.showModal = function () {
-    this.setAttribute("open", "");
-  };
-  HTMLDialogElement.prototype.close = function () {
-    this.removeAttribute("open");
-  };
-});
-afterEach(() => {
-  vi.restoreAllMocks();
-  vi.unstubAllGlobals();
-  document.body.style.overflow = "";
-});
 
 function ControlledPicker() {
   const [selection, setSelection] = useState<VibeSelection>({});
   return <VibePicker value={selection} onChange={setSelection} />;
 }
 
-function openRefinements() {
-  fireEvent.click(screen.getByRole("button", { name: /Refine/ }));
-}
-
-function resizeToMobile() {
-  act(() => { mobile = true; mediaListener?.(); });
-}
-
-test("moods remain prominent and desktop refinements share a persistent search and selection", () => {
+test("category tabs retain selections and search across category changes", () => {
   render(<ControlledPicker />);
-  expect(screen.getByRole("group", { name: "Mood" })).toBeVisible();
-  expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Moody", pressed: false }));
-  openRefinements();
-  fireEvent.click(screen.getByRole("button", { name: "R&B", pressed: false }));
-  fireEvent.change(screen.getByRole("searchbox", { name: "Search vibes" }), { target: { value: "rain" } });
-  fireEvent.click(screen.getByRole("button", { name: "Rainy night", pressed: false }));
-  openRefinements();
-  const selected = within(screen.getByRole("status", { name: "Selected vibes" }));
-  expect(selected.getByRole("button", { name: "Remove Moody" })).toBeVisible();
-  expect(selected.getByRole("button", { name: "Remove R&B" })).toBeVisible();
-  expect(selected.getByRole("button", { name: "Remove Rainy night" })).toBeVisible();
-  openRefinements();
-  expect(screen.getByRole("searchbox")).toHaveValue("rain");
-  fireEvent.click(selected.getByRole("button", { name: "Remove R&B" }));
-  expect(selected.queryByRole("button", { name: "Remove R&B" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Moody" }));
+  fireEvent.click(screen.getByRole("tab", { name: "Genre" }));
+  expect(screen.queryByRole("button", { name: "Dreamy" })).not.toBeInTheDocument();
+  fireEvent.change(screen.getByRole("searchbox"), { target: { value: "soul" } });
+  fireEvent.click(screen.getByRole("button", { name: "Neo-soul" }));
+  expect(screen.getByRole("status", { name: "Selected vibes" })).toHaveTextContent("Moody");
+  expect(screen.getByRole("status", { name: "Selected vibes" })).toHaveTextContent("Neo-soul");
+  fireEvent.click(screen.getByRole("tab", { name: /Mood/ }));
+  expect(screen.getByRole("searchbox")).toHaveValue("soul");
+  fireEvent.change(screen.getByRole("searchbox"), { target: { value: "" } });
+  expect(screen.getByRole("button", { name: /Moody/, pressed: true })).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Remove Moody" }));
+  expect(screen.getByRole("button", { name: "Moody", pressed: false })).toBeVisible();
 });
 
-test("search uses local options and Surprise me exposes editable selections", () => {
-  const fetch = vi.spyOn(globalThis, "fetch");
-  vi.spyOn(Math, "random").mockReturnValue(0);
+test("tabs support arrow keys and Home and End", () => {
   render(<ControlledPicker />);
-  openRefinements();
-  fireEvent.change(screen.getByRole("searchbox"), { target: { value: "rain" } });
-  expect(screen.getByRole("button", { name: "Rainy night", pressed: false })).toBeVisible();
-  expect(screen.getByText("No moods match your search.")).toBeVisible();
+  const mood = screen.getByRole("tab", { name: "Mood" });
+  mood.focus();
+  fireEvent.keyDown(mood, { key: "ArrowRight" });
+  expect(screen.getByRole("tab", { name: "Genre" })).toHaveFocus();
+  fireEvent.keyDown(screen.getByRole("tab", { name: "Genre" }), { key: "End" });
+  expect(screen.getByRole("tab", { name: "Energy" })).toHaveAttribute("aria-selected", "true");
+  fireEvent.keyDown(screen.getByRole("tab", { name: "Energy" }), { key: "Home" });
+  expect(mood).toHaveFocus();
+});
+
+test("Surprise exposes five editable selections without generating", () => {
+  render(<ControlledPicker />);
   fireEvent.click(screen.getByRole("button", { name: "Surprise me" }));
-  expect(within(screen.getByRole("status", { name: "Selected vibes" })).getAllByRole("button")).toHaveLength(5);
-  expect(fetch).not.toHaveBeenCalled();
+  const selected = screen.getByRole("status", { name: "Selected vibes" });
+  expect(within(selected).getAllByRole("button")).toHaveLength(5);
+  fireEvent.click(within(selected).getAllByRole("button")[0]!);
+  expect(within(selected).getAllByRole("button")).toHaveLength(4);
 });
 
-test("mobile sheet closes with Done or Escape, restores focus, and releases body scroll", () => {
-  resizeToMobile();
-  render(<ControlledPicker />);
-  const trigger = screen.getByRole("button", { name: "Refine" });
-  trigger.focus();
-  openRefinements();
-  const sheet = screen.getByRole("dialog", { name: "Refine your vibe" });
-  expect(sheet).toHaveAttribute("open");
-  expect(document.body.style.overflow).toBe("hidden");
-  expect(screen.getByRole("searchbox")).toHaveFocus();
-  fireEvent.click(screen.getByRole("button", { name: "R&B", pressed: false }));
-  fireEvent.click(screen.getByRole("button", { name: "Done" }));
-  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  expect(trigger).toHaveFocus();
-  expect(document.body.style.overflow).toBe("");
-  expect(screen.getByRole("button", { name: "Remove R&B" })).toBeVisible();
-  openRefinements();
-  fireEvent(screen.getByRole("dialog"), new Event("cancel", { cancelable: true }));
-  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  expect(trigger).toHaveFocus();
-  expect(document.body.style.overflow).toBe("");
-});
-
-test("resizing an open sheet closes it and restores focus and scroll", () => {
-  resizeToMobile();
-  render(<ControlledPicker />);
-  const trigger = screen.getByRole("button", { name: "Refine" });
-  openRefinements();
-  act(() => { mobile = false; mediaListener?.(); });
-  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  expect(trigger).toHaveFocus();
-  expect(document.body.style.overflow).toBe("");
-});
-
-test("unmounting an open sheet releases the body scroll lock", () => {
-  resizeToMobile();
-  const view = render(<ControlledPicker />);
-  openRefinements();
-  expect(document.body.style.overflow).toBe("hidden");
-  view.unmount();
-  expect(document.body.style.overflow).toBe("");
-});
-
-test("resizing an inline refinement while focused returns focus to Refine", () => {
-  render(<ControlledPicker />);
-  const trigger = screen.getByRole("button", { name: "Refine" });
-  openRefinements();
-  screen.getByRole("searchbox").focus();
-  resizeToMobile();
-  expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
-  expect(trigger).toHaveFocus();
-});
-
-test("disabled options and standalone Surprise cannot change the selection", () => {
-  const onChange = vi.fn();
-  render(<VibePicker value={{}} onChange={onChange} disabled />);
-  openRefinements();
-  expect(screen.getByRole("searchbox")).toBeDisabled();
+test("disabled picker cannot modify the selection", () => {
+  const change = vi.fn();
+  render(<VibePicker value={{}} onChange={change} disabled />);
   expect(screen.getByRole("button", { name: "Moody" })).toBeDisabled();
-  expect(screen.getByRole("button", { name: "R&B" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Surprise me" })).toBeDisabled();
-  fireEvent.click(screen.getByRole("button", { name: "Surprise me" }));
-  expect(onChange).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Moody" }));
+  expect(change).not.toHaveBeenCalled();
 });
