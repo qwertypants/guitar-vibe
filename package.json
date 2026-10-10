@@ -13,7 +13,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "build": "next build --webpack",
     "start": "next start",
-    "start:pi": "next start --hostname 0.0.0.0 --port 3100"
+    "start:pi": "next start --hostname 0.0.0.0 --port 3100",
+    "eval:models": "node --conditions=react-server --import tsx evals/run.ts"
   },
   "dependencies": {
     "client-only": "0.0.1",
@@ -40,6 +41,7 @@
     "jsdom": "30.1.2",
     "postcss": "8.5.29",
     "tailwindcss": "4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "~5.9.3",
     "vite": "^8.0.0",
     "vitest": "5.0.3"
