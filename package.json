@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "typecheck": "next typegen && tsc --noEmit",
     "build": "next build --webpack",
-    "start": "next start"
+    "start": "next start",
+    "start:pi": "next start --hostname 0.0.0.0"
   },
   "dependencies": {
     "@openrouter/ai-sdk-provider": "^3.1.0",

@@ -36,9 +36,40 @@ the key, the app still loads, but generation returns a setup message.
 | `npm run typecheck` | Generate Next.js route types and check strict TypeScript |
 | `npm run build` | Compile the production app and check its types |
 | `npm run start` | Serve the compiled production app |
+| `npm run start:pi` | Serve the production app on all network interfaces for LAN access |
 
 Run lint, tests, typecheck, and build before handing off a change. Browser
 end-to-end tooling and `test:e2e` will be added with the core flow in Task 7.
+
+## Raspberry Pi (LAN)
+
+Run the production server on the Pi instead of `npm run dev`. The service uses
+the compiled production bundles and does not depend on the development server's
+hot-reload connection.
+
+From the app checkout on the Pi, install Node.js 22.22.2 (the version in
+`.nvmrc`), install the locked dependencies, and put `OPENROUTER_API_KEY` in a
+Next.js environment file in the project directory (prefer `.env.local`). Keep
+that file private; the systemd service runs as the checkout owner and Next.js
+loads environment files from the project directory. Variables set only in an
+SSH shell are not inherited by systemd.
+
+```sh
+npm ci
+npm run build
+bash deploy/install-pi-service.sh
+```
+
+The installer registers `guitar-vibe.service` for the current checkout and
+SSH user, enables it at boot, starts it, and checks its local HTTP response. It
+uses `sudo` for the systemd operations and refuses to replace an existing
+service with that name. After installation, open `http://<pi-ip>:3000` from a
+device on the same network. Allow TCP port 3000 through the Pi's firewall if
+one is enabled.
+
+To update the app, update the checkout, run `npm ci` and `npm run build`, then
+restart it with `sudo systemctl restart guitar-vibe`. View service logs with
+`sudo journalctl -u guitar-vibe -f`.
 
 ## Server and client boundaries
 
