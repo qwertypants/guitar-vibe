@@ -1,0 +1,72 @@
+# Local chord model implementation plan
+
+> For agentic workers: execute with subagent-driven-development and test-driven-development. The orchestrator assigns one implementation owner at a time and independent reviewers.
+
+**Goal:** Replace hosted progression generation with a bounded local model, project-specific evals, and a reproducible Tilt/Compose workflow.
+
+**Authority:** The user confirmed local generation, quality-first model selection, evals and guardrails, native inference when more efficient on macOS, container configuration, and a coordinated agent team. Target hardware is Apple M3 Max with 48 GiB RAM. This file records the implementation of that confirmed scope.
+
+**Architecture:** Keep the existing Next.js route and trusted voicing catalog. A small server-only Ollama adapter returns validated chord symbols and timing/token metadata. An offline evaluator calls that same adapter; Compose runs the app and optionally Ollama, while native Ollama supports Apple GPU acceleration. No agent framework, training, cloud fallback, or Kubernetes.
+
+**Tech stack:** Existing Next.js, TypeScript, Zod, Vitest; native fetch; Ollama; Docker Compose; Tilt. Add only a small TS CLI runner if required for evals.
+
+## Global constraints
+
+- Preserve the browser contract: POST /api/progression accepts {vibeIds: string[]} and returns {chords: ProgressionCard[]} or a safe {error: string}.
+- The model returns only 3-8 chord symbols; trusted local code alone supplies voicings and audio data.
+- Accept 1-5 known vibe IDs, no repeated ID or facet. Never interpolate arbitrary user text into the prompt.
+- Model inference must use local Ollama with no credentials, hosted fallback, or tools. Configuration must reject cloud model names and nonlocal endpoints.
+- Bound inference to one request, a 30-second total deadline, a 2,048-token context, and 128 generated tokens. Disable thinking. Limit raw response size to 64 KiB. Reject truncated, malformed, unsupported, or wholly repeated progressions.
+- Use TDD for behavioral changes: record focused failing-before and passing-after commands/output. Pure config/docs use runtime verification.
+- Quality gates precede efficiency comparison. Automated harmony/vibe checks are proxies, not proof of musical taste. Report every failure, cold/warm timing, sample count, and model identity.
+- Keep work on feature/local-model in this isolated worktree. Preserve main and existing changes; no merge, push, publication, system installations, model deletion, or secret reads.
+- Single implementation writer. No worker may spawn agents. Task reports and reviews go into this plan's .superpowers/sdd workspace. Commit only owned paths after inspecting status and diff.
+
+## Task 1: Local generation and guardrails
+
+**Owner:** gpt-6.1-sol, medium reasoning. Scope: lib/server/local-model.ts, app/api/progression/route.ts, tests/local-model.test.ts, tests/progression-route.test.ts, .env.example, package.json/package-lock.json only for removing unused hosted SDKs. Read AGENTS.md and relevant TypeScript skill. Use graft before source exploration.
+
+**Interface:** Export `generateLocalProgression(vibeIds: readonly string[], options?: {model?: string; baseUrl?: string; seed?: number; signal?: AbortSignal}): Promise<{chords: string[]; metrics: {wallMs: number; loadMs: number; promptTokens: number; outputTokens: number; generationMs: number}}>`. Export a typed `LocalModelError` with code `invalid_input | configuration | unavailable | timeout | invalid_output`. Accept env OLLAMA_BASE_URL (default http://127.0.0.1:11434) and OLLAMA_MODEL (provisional qwen2.5:1.5b; finalized by measured evals in Task 4). An exported pure config function is allowed if it reduces duplication for the CLI.
+
+- [ ] Write focused tests first, using existing Vitest and the real Request/Response API. Stub only the external fetch boundary, not validation/voicing logic. Tests must cover valid generation; unknown/duplicate/same-facet IDs; malformed JSON; wrong shape/count; unsupported symbols; all identical chords; provider HTTP failure; truncated output; timeout/abort; oversized response; rejection of remote URLs and cloud models. Request-body tests verify invalid payloads make no inference call and successful response resolves trusted voicings.
+- [ ] Run `npm run test -- tests/local-model.test.ts tests/progression-route.test.ts`; record expected failures before implementation.
+- [ ] Implement one native-fetch POST to /api/chat, with JSON-schema output constrained to the supported chord enum, stream false, think false, temperature 0.2, num_ctx 2048, num_predict 128, keep_alive 5m, optional seed. Reuse SUPPORTED_CHORDS, progressionRequestSchema, getVibeLabels, progressionSchema, resolveProgression. Include short harmony guidance (minor for melancholy/dark; major for joyful/hopeful; sevenths for jazz/neo-soul; I-IV-V dominants for blues), no preset progression answer. Validate the returned Ollama envelope and JSON again locally. Do not silently repair output or retry.
+- [ ] Local endpoint allowlist: localhost, 127.0.0.1, ::1, host.docker.internal, ollama; HTTP only, no userinfo/query/hash/path besides slash; disable HTTP redirects. Reject model IDs containing a cloud tag/suffix. Timeout must span headers AND response consumption; bound bytes even when Content-Length is absent; cancel the stream on overflow.
+- [ ] Route maps invalid_input to 400, configuration/unavailable to 503, timeout to 504, invalid_output to 502. Logs contain bounded diagnostic codes, never raw model text or environment values. Remove OpenRouter-specific dependencies if unused elsewhere. Do not change UI behavior, playback, or voicings.
+- [ ] Rerun focused tests to GREEN; run full tests, lint and typecheck. Inspect diff; commit as one coherent change. Write detailed report with RED/GREEN evidence and concerns.
+
+## Task 2: Project eval corpus and benchmark runner
+
+**Owner:** gpt-6.1-sol, medium reasoning. Scope: evals/cases.ts, evals/scoring.ts, evals/run.ts, tests/evals.test.ts, package.json/package-lock.json, .gitignore. Consume Task 1's generateLocalProgression interface and the actual chord catalog. CLI runs server-only modules with Node's react-server condition, using tsx if needed. Do not change the runtime prompt or acceptance rules in this task.
+
+**Interface:** `npm run eval:models -- --models <comma-separated IDs> --runs 3 --out <path>` writes machine-readable results and a concise stdout summary. Defaults: the research shortlist supplied by the orchestrator, 3 scored repetitions per fixture, sequential calls, no implicit downloads. Exit nonzero if no model passes the automatic gate. Fail fast for invalid CLI args; unavailable models record failures and allow others to run.
+
+- [ ] Define a compact fixed corpus of at least 12 cases covering all five facets, blues, jazz/neo-soul, folk/pop, dark/joyful moods, and mixed selections. Each case names a transparent proxy expectation: minor presence, major opening, seventh presence, triad share, blues I-IV-V dominant root relationships, or no additional vibe claim for vague settings/eras. Include independent holdout combinations, labelled as such, that were not copied into the prompt. Never demand an exact progression. Include checks for variety within a progression and repeated identical output across the entire diverse corpus.
+- [ ] Implement scoring with explicit per-case reasons, hard valid/playable gate at 100%, vibe proxy pass rate >=80%, and at least three distinct progressions across the corpus. Tests first must demonstrate that invalid chords fail, all-major melancholy fails, valid minor melancholy passes, blues needs the right root relationship, and an all-identical-output model cannot win. Test aggregation with empty/failed samples, percentile calculation and quality-before-speed selection. An all-failing run must produce no winner.
+- [ ] The runner calls the SAME generateLocalProgression used by the route. Record a separately labelled first request and a discarded warmup, then all scored requests. Use fixed seeds per repetition, identical settings for every model, no concurrency. Record raw accepted chord arrays, case/seed/error, wall latency, load/generation timings, prompt/output tokens; failures count in gate denominators. Report sample count, p50/p95 warm wall latency and maximum load time; do not call first-request time cold unless unloading was explicitly performed.
+- [ ] Inspect /api/tags, /api/show, /api/ps as needed with bounded local requests to record exact digest, quantization, parameter count, installed bytes and loaded-model size/size_vram. Label Ollama residency estimates separately from process RSS or total system memory. Never stop/unload a model this runner did not load, and do not delete models. Do not mutate existing Ollama configuration.
+- [ ] Among models passing all quality gates choose lowest p50 latency, with lower loaded bytes as the tie-breaker; publish all metrics so memory/speed tradeoffs are visible. State automatic checks do not replace listening or a human vibe assessment and benchmarks are only this shortlist/hardware.
+- [ ] Follow RED/GREEN; run full tests, lint/typecheck; inspect and commit only task paths. Record commands/output in report.
+
+## Task 3: Container and Tilt development workflow
+
+**Owner:** gpt-6.1-sol, medium reasoning. Scope: Dockerfile, .dockerignore, compose.yml, compose.native.yml, Tiltfile, README.md, scripts/check-model.mjs only if needed, and focused script tests if logic is added. Read tilt-dev and its Docker Compose/verification references. Preserve the existing npm dev command and app contract.
+
+- [ ] Provide a complete app + Ollama Compose path with named persistent model volume, loopback-only published app port 3000 (configurable), no publicly published model port by default, and an Ollama health check. Pin image versions. App development command is npm run dev with an explicit container bind address. Never send .env files, .git, node_modules, worktrees, eval output, or local scratch to Docker build context. Do not bake credentials into images.
+- [ ] Provide a native-Ollama mode for Macs: app remains containerized and reaches http://host.docker.internal:11434. Native mode must not create the container Ollama service. Use documented Compose file selection/overrides; avoid a second competing image-build path.
+- [ ] Tilt selects `--runtime=native` or `--runtime=container` with a clear default documented for this Mac-targeted workflow. A model-prepare/readiness job must verify or pull the selected model and fail within a bounded time, before app readiness is claimed. Downloads may occur only in the explicitly invoked setup workflow, never ordinary request handling. Native Ollama is an existing installed/running prerequisite; do not reconfigure or terminate it. Explain this prerequisite honestly rather than pretending Tilt owns it.
+- [ ] Keep Tilt short and explicit: docker_compose for services; local_resource only for real finite setup/checks or manual tests/evals. No docker compose up wrapped in local_resource. Include a manual eval resource if simple. No Kubernetes, framework redesign, production deploy, or automatic package/system installations.
+- [ ] Validate Compose config for BOTH runtime modes and run narrow Tilt validation. The orchestrator will perform actual startup, app-to-model smoke, UI generation and cleanup after integration. If tool access is blocked, report exact boundary.
+- [ ] Rewrite hosted setup instructions and env references in README, including the existing Pi section so it no longer instructs use of OpenRouter. Document prerequisites, first download vs offline inference, ports, modes, eval command, model override, safe errors, resources and cleanup. No claims of a winning model until Task 4 results arrive. Do not invent an app license or change existing asset licenses.
+- [ ] Inspect final diff and commit task paths; report configuration and runtime evidence precisely.
+
+## Task 4: Measured selection and final integration
+
+**Owner:** orchestrator conducts bounded runtime experiments; gpt-6-luna applies small fully specified defaults/documentation updates. No simultaneous implementation writers.
+
+- [ ] Download the shortlist identified from official model cards into the existing local Ollama, recording sizes and licenses. No system installs. Run the committed evaluator with the fixed corpus and settings, capturing raw JSON under evals/results/ with machine/hardware/runtime/date metadata. Pull/setup is outside timing.
+- [ ] Evaluate all quality failures, including suspiciously weak scoring. The default may only be selected among passing models; do not weaken gates to force a winner. Human/listening quality remains explicitly unverified unless actually performed. If none pass, preserve evidence and tune the minimal prompt under TDD, then rerun all candidates under the same conditions, retaining both result sets.
+- [ ] Benchmark the winner through native and container inference on at least three shared cases, with identical settings, and report the native/container boundary and CPU/GPU facts. Full container inference may be slower; report failures/timeouts without inventing scores.
+- [ ] Update default model everywhere consistently, with a focused failing-before test if runtime default changes. Check in a concise evals/README.md with report links, sample sizes, measured timings/memory, chosen default, model licenses, limitations and reproduction commands. Include supporting primary source links. Do not claim global optimality or energy measurements.
+- [ ] Run tests, lint, typecheck and build after final changes. Exercise actual Tilt startup, inspect resource state/logs, generate via the app from its own network namespace and in a browser, then run tilt down and verify owned containers gone. Preserve preexisting native Ollama and model files. Log exact failures if environment blocks verification.
+- [ ] Refresh graft and get one broad whole-branch review on the most capable model. Apply one coordinated fix wave if needed and one scoped re-review. Leave a clean feature branch for user integration, no push/merge. Report outstanding boundaries truthfully.
