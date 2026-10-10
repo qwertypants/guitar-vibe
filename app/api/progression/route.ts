@@ -11,6 +11,25 @@ import {
 
 export const runtime = "nodejs";
 
+function safeErrorDetails(cause: unknown) {
+  if (!(cause instanceof Error)) return { type: typeof cause };
+
+  const candidate = cause as Error & { code?: unknown; statusCode?: unknown };
+  const message = cause.message
+    .replace(/\bsk-or-v1-[\w-]+/gi, "[redacted]")
+    .replace(/\bsk-[\w-]+/gi, "[redacted]")
+    .replace(/\bBearer\s+\S+/gi, "Bearer [redacted]")
+    .replace(/(OPENROUTER_API_KEY\s*[:=]\s*)\S+/gi, "$1[redacted]")
+    .slice(0, 400);
+
+  return {
+    name: cause.name,
+    message,
+    ...(typeof candidate.statusCode === "number" ? { statusCode: candidate.statusCode } : {}),
+    ...(typeof candidate.code === "string" ? { code: candidate.code } : {}),
+  };
+}
+
 export async function POST(request: Request) {
   let body: unknown;
   try {
@@ -52,7 +71,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "That progression used an unsupported chord. Please generate another." }, { status: 502 });
     }
     return NextResponse.json({ chords });
-  } catch {
+  } catch (cause) {
+    console.error("[progression] OpenRouter generation failed", safeErrorDetails(cause));
     return NextResponse.json({ error: "We couldn't reach the chord generator. Please try again." }, { status: 502 });
   }
 }
