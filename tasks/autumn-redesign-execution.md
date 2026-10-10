@@ -4,7 +4,7 @@ The implementation is integrated in `/Users/wilkins/Sites/guitar-vibe`. Existing
 
 ## Execution decisions
 
-- Used standard Git following the user's explicit correction. GitButler was unavailable.
+- Used standard Git following the user's explicit correction.
 - Preserved the dirty baseline rather than committing mixed user work. Workers used isolated snapshots under `/tmp/guitar-autumn-1010/`; Root copied only their owned paths back after checking that the primary files still matched the baseline. This provides snapshot provenance rather than worker commit hashes. The implementation was initially left uncommitted for review, then committed following the user's request. Existing API diagnostic changes were excluded from the redesign commit.
 - Nodeterm rejected canvas control because this is not a Nodeterm agent node. Runtime subagents were used; right-hand panel placement and stacking could not be controlled.
 
