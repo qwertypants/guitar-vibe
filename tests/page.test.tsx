@@ -1,60 +1,78 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { expect, test } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import Home from "@/app/page";
 
-test("the landing page introduces Vibe Chords in the main landmark", () => {
-  render(<Home />);
-
-  expect(screen.getByRole("main")).toContainElement(
-    screen.getByRole("heading", { level: 1, name: "Vibe Chords" }),
-  );
-  expect(screen.getByRole("group", { name: "Mood" })).toBeVisible();
-  expect(screen.getByText("Refine your vibe").closest("details")).not.toHaveAttribute("open");
-  expect(screen.getByRole("button", { name: "Generate progression" })).toBeDisabled();
-  expect(screen.getByRole("button", { name: "Surprise me" })).toBeVisible();
-  const buttons = screen.getAllByRole("button");
-  expect(buttons.indexOf(screen.getByRole("button", { name: "Generate progression" }))).toBeLessThan(
-    buttons.indexOf(screen.getByRole("button", { name: "Surprise me" })),
-  );
+beforeEach(() => {
+  vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+  HTMLDialogElement.prototype.showModal = function () {
+    this.setAttribute("open", "");
+  };
+  HTMLDialogElement.prototype.close = function () {
+    this.removeAttribute("open");
+  };
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
-test("a mood enables Generate and removing the last selection disables it", () => {
+test("the landing page keeps explicit generation after visible selection", () => {
+  const fetch = vi.spyOn(globalThis, "fetch");
   render(<Home />);
+  expect(screen.getByRole("main")).toContainElement(screen.getByRole("heading", { level: 1, name: "Vibe Chords" }));
   const generate = screen.getByRole("button", { name: "Generate progression" });
-
-  fireEvent.click(screen.getByRole("button", { name: "Moody", pressed: false }));
-  expect(generate).toBeEnabled();
-  expect(screen.getByRole("button", { name: "Moody", pressed: true })).toBeVisible();
-  expect(screen.getByRole("status", { name: "Selected vibes" })).toBeVisible();
-
-  fireEvent.click(screen.getByRole("button", { name: "Remove Moody" }));
   expect(generate).toBeDisabled();
-  expect(screen.queryByRole("status", { name: "Selected vibes" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Surprise me" }));
+  expect(generate).toBeEnabled();
+  expect(within(screen.getByRole("status", { name: "Selected vibes" })).getAllByRole("button")).toHaveLength(5);
+  expect(fetch).not.toHaveBeenCalled();
 });
 
-test("toggling a mood off restores the disabled Generate state", () => {
+test("Reset clears selection and errors through the existing selection path", async () => {
+  vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: false, json: async () => ({ error: "Generation failed" }) } as Response);
   render(<Home />);
-
   fireEvent.click(screen.getByRole("button", { name: "Moody", pressed: false }));
-  fireEvent.click(screen.getByRole("button", { name: "Moody", pressed: true }));
-
+  fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Generation failed");
+  fireEvent.click(screen.getByRole("button", { name: "More" }));
+  fireEvent.click(screen.getByRole("menuitem", { name: "Reset selection" }));
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(screen.queryByRole("status", { name: "Selected vibes" })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Generate progression" })).toBeDisabled();
 });
 
-test("a refinement alone enables Generate and persists when refinements close", () => {
+test("More menu supports Escape and Help restores focus", () => {
   render(<Home />);
-  fireEvent.click(screen.getByText("Refine your vibe"));
-  fireEvent.click(screen.getByRole("button", { name: "R&B", pressed: false }));
-  fireEvent.click(screen.getByText("Refine your vibe"));
-
-  expect(screen.getByRole("button", { name: "Generate progression" })).toBeEnabled();
-  expect(screen.getByRole("button", { name: "Remove R&B" })).toBeVisible();
+  const more = screen.getByRole("button", { name: "More" });
+  fireEvent.click(more);
+  expect(screen.getByRole("menu", { name: "More options" })).toBeVisible();
+  fireEvent.keyDown(document, { key: "Escape" });
+  expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+  expect(more).toHaveFocus();
+  fireEvent.click(more);
+  const menu = screen.getByRole("menu");
+  screen.getByRole("menuitem", { name: "How to play" }).focus();
+  fireEvent.keyDown(menu, { key: "ArrowDown" });
+  expect(screen.getByRole("menuitem", { name: "Reset selection" })).toHaveFocus();
+  fireEvent.keyDown(menu, { key: "Home" });
+  expect(screen.getByRole("menuitem", { name: "How to play" })).toHaveFocus();
+  fireEvent.click(screen.getByRole("menuitem", { name: "How to play" }));
+  expect(screen.getByRole("dialog", { name: "How to play" })).toHaveAttribute("open");
+  expect(document.body.style.overflow).toBe("hidden");
+  fireEvent(screen.getByRole("dialog"), new Event("cancel", { cancelable: true }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(more).toHaveFocus();
+  expect(document.body.style.overflow).toBe("");
 });
 
-test("Surprise me updates home selection and enables Generate", () => {
+test("Reset stays disabled while a generation request is pending", async () => {
+  let resolveRequest: ((value: Response) => void) | undefined;
+  vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise<Response>((resolve) => { resolveRequest = resolve; }));
   render(<Home />);
-  fireEvent.click(screen.getByRole("button", { name: "Surprise me" }));
-
-  expect(screen.getByRole("button", { name: "Generate progression" })).toBeEnabled();
-  expect(within(screen.getByRole("status", { name: "Selected vibes" })).getAllByRole("button")).toHaveLength(5);
+  fireEvent.click(screen.getByRole("button", { name: "Moody", pressed: false }));
+  fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
+  fireEvent.click(screen.getByRole("button", { name: "More" }));
+  expect(screen.getByRole("menuitem", { name: "Reset selection" })).toBeDisabled();
+  resolveRequest?.({ ok: false, json: async () => ({ error: "Try again" }) } as Response);
+  await waitFor(() => expect(screen.getByRole("menuitem", { name: "Reset selection" })).toBeEnabled());
 });

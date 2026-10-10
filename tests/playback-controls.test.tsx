@@ -11,33 +11,31 @@ function voicings(symbol: string) {
   return chord.voicings;
 }
 
-test("groups every position in one focusable horizontal progression with individual previews", () => {
+test("groups every position in one ordered progression with individual previews", () => {
   const selected = voicings("C");
   render(<PlaybackControls voicings={selected}>{(voicing) => <span>{voicing.label}</span>}</PlaybackControls>);
 
   const strip = screen.getByRole("region", { name: "Chord progression" });
   expect(strip).toHaveAttribute("tabindex", "0");
-  expect(strip).toHaveAccessibleDescription(/Swipe or scroll horizontally.*left and right arrow keys/);
-  expect(strip).toHaveClass("overflow-x-auto");
+  expect(strip).toHaveAccessibleDescription(/play the full progression in order/);
   strip.focus();
   expect(strip).toHaveFocus();
 
   const progression = within(strip).getByRole("list");
   expect(progression.tagName).toBe("OL");
-  expect(progression).toHaveClass("flex", "flex-nowrap");
   const positions = within(progression).getAllByRole("listitem");
   expect(positions).toHaveLength(selected.length);
   selected.forEach((voicing, index) => {
     const position = positions[index];
     if (!position) throw new Error(`Missing position ${index + 1}`);
-    expect(position).toHaveClass("w-[22rem]", "shrink-0");
     expect(within(position).getByText(`Position ${index + 1}`)).toBeVisible();
     expect(within(position).getByRole("button", {
       name: `Preview ${voicing.chord}, ${voicing.label}, position ${index + 1}`,
     })).toBeEnabled();
   });
-  expect(within(strip).queryByRole("button", { name: "Play sequence" })).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Play sequence" })).toBeEnabled();
+  expect(within(strip).queryByRole("button", { name: "Play progression" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Play progression" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Play progression" }).querySelector("svg")).toHaveAttribute("aria-hidden", "true");
 });
 
 test("accessible controls switch modes, stop on selection/regeneration and release on unmount", async () => {
@@ -48,9 +46,11 @@ test("accessible controls switch modes, stop on selection/regeneration and relea
   fireEvent.click(screen.getByRole("button", { name: /Preview C, Open position, position 1/ }));
   await waitFor(() => expect(audio.play).toHaveBeenCalledWith(selected[0].midiNotes, 1200));
   expect(screen.getByRole("button", { name: /Stop C, Open position/ })).toHaveAttribute("aria-pressed", "true");
-  fireEvent.click(screen.getByRole("button", { name: "Play sequence" }));
-  await waitFor(() => expect(screen.getByRole("button", { name: "Stop sequence" })).toHaveAttribute("aria-pressed", "true"));
-  fireEvent.click(screen.getByRole("button", { name: "Stop all audio" }));
+  expect(screen.getByText("Previewing this chord")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Play progression" }));
+  await waitFor(() => expect(screen.getByText("Playing this progression position")).toBeVisible());
+  expect(screen.getByRole("button", { name: "Stop progression" })).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(screen.getByRole("button", { name: "Stop progression" }));
   expect(screen.getByRole("status")).toHaveTextContent("Playback stopped.");
   await act(async () => { await controller.sequence(selected); });
   rerender(<StrictMode><PlaybackControls voicings={voicings("G")} createController={() => controller} /></StrictMode>);
@@ -65,7 +65,7 @@ test("blocked audio gives a readable alert and stop remains available while resu
   const audio = { prepare: vi.fn(async () => { throw new Error("Audio playback is unavailable in this browser."); }), play: vi.fn(), stop: vi.fn(), dispose: vi.fn() };
   const controller = new PlaybackController(audio);
   render(<PlaybackControls voicings={voicings("C")} createController={() => controller} />);
-  fireEvent.click(screen.getByRole("button", { name: "Play sequence" }));
+  fireEvent.click(screen.getByRole("button", { name: "Play progression" }));
   await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Audio playback is unavailable"));
-  expect(screen.getByRole("button", { name: "Stop all audio" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: /^Stop$/ })).toBeDisabled();
 });

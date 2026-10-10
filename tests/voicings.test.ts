@@ -57,3 +57,26 @@ describe("trusted chord catalog", () => {
     expect(voicingToVexTab(higher)).toContain("(8/6.10/5.10/4.9/3.8/2.8/1)");
   });
 });
+
+test("diagram string positions reconstruct every catalog voicing and its playback notes", async () => {
+  const { voicingToVexChords } = await import("@/lib/chord-notation");
+  for (const { symbol } of SUPPORTED_CHORDS) {
+    const resolved = resolveChord(symbol);
+    if (resolved.kind !== "resolved") throw new Error(symbol);
+    for (const voicing of resolved.voicings) {
+      const data = voicingToVexChords(voicing);
+      expect(data.chord.map(([string]) => string)).toEqual([6, 5, 4, 3, 2, 1]);
+      const reconstructed = data.chord.map(([, fret]) => fret === "x" ? null : fret === 0 ? 0 : fret + Math.max(1, data.position) - 1);
+      expect(reconstructed).toEqual(voicing.frets);
+      expect(reconstructed.flatMap((fret, index) => fret === null ? [] : [STANDARD_TUNING_MIDI[index]! + fret])).toEqual(voicing.midiNotes);
+      for (const [, fret] of data.chord) {
+        if (typeof fret === "number") expect(fret).toBeLessThanOrEqual(5);
+      }
+    }
+  }
+  const c = resolveChord("C");
+  if (c.kind !== "resolved") throw new Error("Missing C");
+  expect(voicingToVexChords(c.voicings[0]).chord).toEqual([[6, "x"], [5, 3], [4, 2], [3, 0], [2, 1], [1, 0]]);
+  const high = c.voicings.find((voicing) => voicing.id === "C-E")!;
+  expect(voicingToVexChords(high)).toMatchObject({ position: 8, chord: [[6, 1], [5, 3], [4, 3], [3, 2], [2, 1], [1, 1]] });
+});

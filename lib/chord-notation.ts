@@ -5,12 +5,34 @@ export function voicingToVexTab(voicing: ChordVoicing): string {
   return `tabstave notation=true tablature=true tuning=standard\nnotes :w (${positions})`;
 }
 
-/** Browser-only compatibility boundary. Never import VexTab during SSR. */
+/** VexChords frets are relative to the displayed starting fret. */
+export function voicingToVexChords(voicing: ChordVoicing) {
+  const position = voicing.baseFret > 1 ? voicing.baseFret : 0;
+  const chord: [number, number | "x"][] = voicing.frets.map((fret, index) => [
+    6 - index,
+    fret === null ? "x" : fret === 0 ? 0 : fret - Math.max(1, position) + 1,
+  ]);
+  return { chord, position, tuning: ["E", "A", "D", "G", "B", "E"] };
+}
+
+/** Browser-only rendering boundary. Keep library imports out of SSR. */
 export async function renderChordNotation(element: HTMLElement, voicing: ChordVoicing): Promise<void> {
-  const { Artist, VexTab, Vex } = await import("vextab");
-  const renderer = new Vex.Flow.Renderer(element, Vex.Flow.Renderer.Backends.SVG);
-  const artist = new Artist(10, 10, 300, { scale: 1 });
-  const parser = new VexTab(artist);
-  parser.parse(voicingToVexTab(voicing));
-  artist.render(renderer);
+  const { ChordBox } = await import("vexchords");
+  const theme = getComputedStyle(document.documentElement);
+  const color = (token: string) => theme.getPropertyValue(token).trim();
+  const diagram = new ChordBox(element, {
+    width: 240,
+    height: 280,
+    numStrings: 6,
+    numFrets: 5,
+    showTuning: true,
+    defaultColor: color("--foreground"),
+    bgColor: color("--card"),
+    strokeColor: color("--accent"),
+    textColor: color("--foreground"),
+    stringColor: color("--muted"),
+    fretColor: color("--muted"),
+    fontFamily: "Arial, sans-serif",
+  });
+  diagram.draw(voicingToVexChords(voicing));
 }

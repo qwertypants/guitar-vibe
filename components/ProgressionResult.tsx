@@ -12,7 +12,7 @@ export function ProgressionResult({ chords }: { chords: readonly ProgressionCard
 
   return (
     <div className="space-y-4 pt-2">
-      <h2 className="text-lg font-semibold">Your chord progression</h2>
+      <h2 className="text-2xl font-semibold">Your chord progression</h2>
       <PlaybackControls voicings={selected}>
         {(voicing, index) => {
           const options = chords[index]?.voicings ?? [];
@@ -25,7 +25,7 @@ export function ProgressionResult({ chords }: { chords: readonly ProgressionCard
                   <select
                     value={positions[index] ?? 0}
                     onChange={(event) => setPositions((current) => current.map((position, item) => item === index ? Number(event.target.value) : position))}
-                    className="min-h-10 w-full rounded border bg-background px-2"
+                    className="min-h-11 w-full rounded border border-foreground/20 bg-card px-3"
                   >
                     {options.map((option, optionIndex) => <option key={option.id} value={optionIndex}>{option.label}</option>)}
                   </select>
