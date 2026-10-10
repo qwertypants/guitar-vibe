@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 import { ChordNotation } from "@/components/ChordNotation";
 import * as notation from "@/lib/chord-notation";
@@ -37,19 +37,17 @@ test("real VexChords renders open and higher C positions and replaces the select
   const { container, rerender, unmount } = render(<ChordNotation voicing={open} />);
   await waitFor(() => expect(container.querySelectorAll("svg")).toHaveLength(1));
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-  const details = screen.getByText("Details").closest("details");
-  expect(details).not.toHaveAttribute("open");
-  fireEvent.click(screen.getByText("Details"));
-  expect(details).toHaveAttribute("open");
-  expect(screen.getByText("Notes: C3, E3, G3, C4, E4")).toBeInTheDocument();
+  expect(container.querySelector("details")).toBeNull();
+  expect(screen.getByLabelText("Chord details")).toHaveTextContent("C3E3G3C4E4");
   const openSvg = container.querySelector("svg");
+  expect(openSvg).toHaveAttribute("viewBox", "0 0 240 280");
   expect(openSvg?.querySelectorAll("circle").length).toBeGreaterThan(0);
   rerender(<ChordNotation voicing={higher} />);
   await waitFor(() => {
     expect(container.querySelectorAll("svg")).toHaveLength(1);
     expect(container.querySelector("svg")).not.toBe(openSvg);
   });
-  expect(screen.getByText("Notes: C3, G3, C4, E4, G4, C5")).toBeInTheDocument();
+  expect(screen.getByLabelText("Chord details")).toBeInTheDocument();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   unmount();
   expect(container.querySelector("svg")).toBeNull();
@@ -73,8 +71,7 @@ test("system theme changes redraw the current diagram with computed theme colors
   expect(lightSvg?.outerHTML).toContain('stroke="#a8442a"');
   expect(lightSvg?.outerHTML).toContain('stroke="#705c4f"');
   expect(lightSvg?.outerHTML).toContain('fill="#fff9f0"');
-  fireEvent.click(screen.getByText("Details"));
-  expect(screen.getByText("Details").closest("details")).toHaveAttribute("open");
+  expect(screen.getByLabelText("Chord details")).toBeVisible();
 
   setDiagramTokens("#F7EBDD", "#2A211C", "#E38B6F", "#C6AD9B");
   await act(async () => {
@@ -89,7 +86,7 @@ test("system theme changes redraw the current diagram with computed theme colors
   expect(container.querySelector("svg")?.outerHTML).toContain('stroke="#e38b6f"');
   expect(container.querySelector("svg")?.outerHTML).toContain('stroke="#c6ad9b"');
   expect(container.querySelector("svg")?.outerHTML).toContain('fill="#2a211c"');
-  expect(screen.getByText("Details").closest("details")).toHaveAttribute("open");
+  expect(screen.getByLabelText("Chord details")).toBeVisible();
   unmount();
   expect(removeListener).toHaveBeenCalledWith("change", expect.any(Function));
 });
@@ -103,13 +100,13 @@ test("failed diagrams retain text and recover on a new selection", async () => {
   const renderer = vi.spyOn(notation, "renderChordNotation").mockRejectedValueOnce(new Error("Failed render"));
   const { rerender } = render(<ChordNotation voicing={chord.voicings[0]} />);
   await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Chord diagram is unavailable"));
-  expect(screen.getByText("Details").closest("details")).toHaveAttribute("open");
-  expect(screen.getByText("Strings, low E to high E: muted, 3, 2, 0, 1, 0")).toBeVisible();
-  expect(screen.getByText("Notes: C3, E3, G3, C4, E4")).toBeVisible();
+  expect(screen.getByLabelText("Chord details")).toBeVisible();
+  expect(screen.getByLabelText("Strings, low E to high E")).toBeVisible();
+  expect(screen.getByLabelText("Chord details")).toBeVisible();
   renderer.mockResolvedValue(undefined);
   rerender(<ChordNotation voicing={next} />);
   await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
-  expect(screen.getByText("Details").closest("details")).not.toHaveAttribute("open");
+  expect(screen.getByLabelText("Chord details")).toBeVisible();
   rerender(<ChordNotation voicing={chord.voicings[0]} />);
   await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
 });

@@ -20,16 +20,15 @@ export function ProgressionResult({ chords }: { chords: readonly ProgressionCard
             <>
               <ChordNotation voicing={voicing} />
               {options.length > 1 && (
-                <label className="space-y-1 text-sm">
-                  <span className="block">Guitar position</span>
-                  <select
-                    value={positions[index] ?? 0}
-                    onChange={(event) => setPositions((current) => current.map((position, item) => item === index ? Number(event.target.value) : position))}
-                    className="min-h-11 w-full rounded border border-foreground/20 bg-card px-3"
-                  >
-                    {options.map((option, optionIndex) => <option key={option.id} value={optionIndex}>{option.label}</option>)}
-                  </select>
-                </label>
+                <div role="group" aria-label={`Guitar position for ${voicing.chord}, chord ${index + 1}`} className="space-y-2">
+                  <p className="detail-label">Guitar position</p>
+                  <div className="flex flex-wrap gap-2">
+                    {options.map((option, optionIndex) => <button type="button" key={option.id}
+                      aria-pressed={(positions[index] ?? 0) === optionIndex}
+                      onClick={() => setPositions((current) => chords.map((_, item) => item === index ? optionIndex : current[item] ?? 0))}
+                      className="position-button">{option.label}</button>)}
+                  </div>
+                </div>
               )}
             </>
           );

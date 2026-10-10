@@ -45,19 +45,22 @@ export function ChordNotation({ voicing }: { voicing: ChordVoicing }) {
 
   return (
     <figure className="space-y-3 text-sm text-muted">
-      <figcaption className="space-y-1">
-        <span className="block text-3xl font-semibold leading-tight text-foreground">{voicing.chord}</span>
+      <figcaption className="space-y-1 pr-14">
+        <span className="chord-name block text-foreground">{voicing.chord}</span>
         <span className="block text-sm text-muted">{voicing.label}</span>
       </figcaption>
-      <div ref={host} role="img" aria-label={`${voicing.chord}, ${voicing.label}, guitar chord diagram`} className="chord-diagram flex min-h-[280px] justify-center" />
+      <div ref={host} role="img" aria-label={`${voicing.chord}, ${voicing.label}, guitar chord diagram`} className="chord-diagram flex justify-center" />
       {failedVoicing === voicing && <p role="alert">Chord diagram is unavailable for this position. Use the frets and notes below.</p>}
-      <details key={voicing.id} open={failedVoicing === voicing} className="rounded border border-foreground/20 px-3">
-        <summary className="flex min-h-11 items-center font-medium text-foreground">Details</summary>
-        <div className="space-y-1 pb-3">
-          <p>Strings, low E to high E: {voicing.frets.map((fret) => fret ?? "muted").join(", ")}</p>
-          <p>Notes: {voicing.notes.map((note) => note.name).join(", ")}</p>
+      <div className="chord-details space-y-2" aria-label="Chord details">
+        <div className="flex flex-wrap items-center gap-1" aria-label="Strings, low E to high E">
+          <span className="detail-label">Frets</span>
+          {voicing.frets.map((fret, index) => <span className="fret-pill" key={index} title={`${["Low E", "A", "D", "G", "B", "High E"][index]}: ${fret ?? "muted"}`}>{fret ?? "×"}</span>)}
         </div>
-      </details>
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="detail-label">Notes</span>
+          {voicing.notes.map((note, index) => <span className="note-pill" key={index}>{note.name}</span>)}
+        </div>
+      </div>
     </figure>
   );
 }

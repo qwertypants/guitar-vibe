@@ -1,5 +1,6 @@
 "use client";
 
+import { Tabs } from "@/components/Tabs";
 import { useEffect, useRef, useState } from "react";
 import { VibePicker } from "@/components/VibePicker";
 import { ProgressionResult } from "@/components/ProgressionResult";
@@ -10,6 +11,8 @@ import type { ProgressionCard } from "@/lib/progression";
 export function VibeChooser() {
   const [selection, setSelection] = useState<VibeSelection>({});
   const [progression, setProgression] = useState<ProgressionCard[] | null>(null);
+  const [view, setView] = useState<"choose" | "play">("choose");
+  const [generatedSelection, setGeneratedSelection] = useState<VibeSelection>({});
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -20,7 +23,6 @@ export function VibeChooser() {
 
   const choose = (next: VibeSelection) => {
     setSelection(next);
-    setProgression(null);
     setError(null);
   };
 
@@ -93,6 +95,8 @@ export function VibeChooser() {
         throw new Error(message);
       }
       setProgression(payload.chords as ProgressionCard[]);
+      setGeneratedSelection(selection);
+      setView("play");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "We couldn't generate a progression. Please try again.");
     } finally {
@@ -129,20 +133,30 @@ export function VibeChooser() {
           </div>}
         </div>
       </div>
-      <VibePicker value={selection} onChange={choose} showSurpriseAction={false} />
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <button type="button" disabled={!hasVibeSelection(selection) || pending} onClick={() => void generate()}
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-accent px-6 py-2 text-sm font-medium text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto">
-          <UiIcon name="generate" />
-          {pending ? "Finding your chords…" : progression ? "Generate another" : "Generate progression"}
-        </button>
-        <button type="button" onClick={() => choose(surpriseVibes())}
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-foreground/20 px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground sm:w-auto">
-          <UiIcon name="surprise" /> Surprise me
-        </button>
-      </div>
-      {error && <p role="alert" className="text-sm">{error}</p>}
-      {progression && <ProgressionResult chords={progression} />}
+      <Tabs label="Workspace" items={[{ id: "choose", label: "Choose vibe" }, { id: "play", label: "Play", disabled: !progression }]} value={view} onChange={setView}>
+        <div hidden={view !== "choose"} className="space-y-5">
+        <VibePicker value={selection} onChange={choose} disabled={pending} showSurpriseAction={false} />
+        <div className="generation-actions flex gap-3 flex-wrap">
+          <button type="button" disabled={!hasVibeSelection(selection) || pending} onClick={() => void generate()}
+            className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto">
+            <UiIcon name="generate" />
+            {pending ? "Finding your chords…" : progression ? "Generate another" : "Generate progression"}
+          </button>
+          <button type="button" disabled={pending} onClick={() => choose(surpriseVibes())}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-foreground/20 px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground sm:w-auto">
+            <UiIcon name="surprise" /> Surprise me
+          </button>
+        </div>
+        {error && <p role="alert" className="text-sm">{error}</p>}
+        </div>
+        {view === "play" && progression && <div className="space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted">{getSelectedVibes(generatedSelection).map((vibe) => vibe.label).join(" · ")}</p>
+            <button type="button" className="min-h-11 rounded-full border border-foreground/20 px-4 text-sm" onClick={() => setView("choose")}>Edit vibe</button>
+          </div>
+          <ProgressionResult key={JSON.stringify(progression)} chords={progression} />
+        </div>}
+      </Tabs>
       {helpOpen && <dialog ref={helpDialog} aria-labelledby="help-title" onCancel={(event) => {
         event.preventDefault();
         closeHelp();

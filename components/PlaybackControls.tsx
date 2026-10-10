@@ -29,7 +29,7 @@ export function PlaybackControls({ voicings, children, createController = () => 
   const buttonClass = "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-foreground/20 px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2";
   return (
     <section aria-label="Chord playback" className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+      <div className="flex flex-wrap items-center gap-3">
         <button type="button" className={`${buttonClass} border-accent bg-accent text-accent-foreground`} disabled={voicings.length === 0}
           aria-pressed={state.kind === "sequence"}
           onClick={() => state.kind === "sequence" ? controller.stop() : start(() => controller.sequence(voicings))}>
@@ -41,12 +41,12 @@ export function PlaybackControls({ voicings, children, createController = () => 
           Stop
         </button>
       </div>
-      <p role="status" aria-live="polite">
+      <p className="sr-only" role="status" aria-live="polite">
         {state.kind === "idle" ? "Playback stopped." : state.kind === "sequence"
           ? `Playing position ${state.index + 1} of ${voicings.length}.` : "Playing chord preview."}
       </p>
       {error && <p role="alert">{error}</p>}
-      <p id={orderHintId} className="text-sm text-muted">Preview a chord or play the full progression in order.</p>
+      <p id={orderHintId} className="sr-only">Preview a chord or play the full progression in order.</p>
       <div role="region" aria-label="Chord progression" aria-describedby={orderHintId} tabIndex={0}
         className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-2">
         <ol role="list" className="progression-grid grid grid-cols-1 gap-5">
@@ -55,19 +55,14 @@ export function PlaybackControls({ voicings, children, createController = () => 
               : state.kind === "preview" && state.voicingId === voicing.id;
             const previewing = state.kind === "preview" && state.voicingId === voicing.id;
             return (
-              <li key={`${index}-${voicing.id}`} className={`flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-4 ${
+              <li key={index} className={`relative flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-4 ${
                 active ? "border-accent ring-1 ring-accent" : "border-foreground/15"
               }`}>
-                <p className="text-xs font-semibold uppercase tracking-widest text-accent">Position {index + 1}</p>
                 {children?.(voicing, index)}
-                {active && <p className="text-sm font-medium text-accent">
-                  {state.kind === "sequence" ? "Playing this progression position" : "Previewing this chord"}
-                </p>}
-                <button type="button" className={`${buttonClass} mt-auto w-full`} aria-pressed={previewing}
+                <button type="button" className="chord-play absolute right-4 top-4" aria-pressed={previewing}
                   aria-label={`${previewing ? "Stop" : "Preview"} ${voicing.chord}, ${voicing.label}, position ${index + 1}`}
                   onClick={() => previewing ? controller.stop() : start(() => controller.preview(voicing))}>
                   <UiIcon name={previewing ? "stop" : "preview"} />
-                  {previewing ? "Stop preview" : `Preview ${voicing.chord}, ${voicing.label}`}
                 </button>
               </li>
             );
