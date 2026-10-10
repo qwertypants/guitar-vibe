@@ -64,8 +64,8 @@ No provider, API, catalog, voicing, synthesis, or playback-engine redesign. No s
 - Repository: `/Users/wilkins/Sites/guitar-vibe`.
 - Filesystem inspection found `.git/HEAD` pointing to `main`, with branch ref `178e7cd14494a63986a85032b4779cce919670a5`. This is an observed ref, not a confirmed clean execution baseline.
 - The prior VexChords/autumn implementation exists in the current files and was left uncommitted. Treat it as user-owned baseline work and preserve it.
-- Dirty/untracked state and existing worktree inventory have not been verified through the required version-control tool. Root must resolve both before execution.
-- The user-provided repository instructions require GitButler for version-control operations. `but` and its installed skill were unavailable during this planning session. Do not guess commands or silently substitute another workflow. At execution, locate/read the skill and use the required tool; if still unavailable, resolve the tooling constraint with the user before version-control mutations.
+- Dirty/untracked state and existing worktree inventory have not been verified. Root must inspect both with normal Git before execution.
+- Use normal Git for version-control operations. Inspect the existing changes before staging and commit only the current task's owned files or hunks.
 - Use Graft before source discovery. Re-read relevant truncated spans before editing. Refresh with `graft build` after integration.
 - `.env`, `.next`, `node_modules`, `graft`, generated type/build files, and `docs/` are ignored. Do not commit credentials, caches, or generated artifacts. This plan is under `tasks/` so an implementation handoff can include it explicitly.
 - Do not copy `.env` into workers. Local fixture chords and intercepted API responses are sufficient for verification; provider availability is outside this task's completion gate.
@@ -150,7 +150,7 @@ Root reviews and integrates A, then B, then C. Inspect actual changes and tests 
 ## 7. Integration and handoff protocol
 
 - Workers do not merge/rebase the integration branch or edit each other's files. One active writer per tracked file.
-- Root reviews and integrates through the repository-required tooling. Do not invent GitButler recipes. Use the installed skill and verified capabilities.
+- Root reviews and integrates with normal Git, preserving unrelated changes and other agents' work.
 - Every writing worker returns branch/checkout identity, baseline and contract commit, own commit hashes, changed paths, test commands/results, assumptions, unresolved risks, and ownership-change requests.
 - Root keeps a provenance table of worker commits and integrated equivalents. No required change may remain only in a worker checkout.
 - Fix conflicts centrally; never discard another agent's work or dirty user files. On failed integration, preserve checkouts and diagnose before further integration.
