@@ -14,66 +14,111 @@ export interface PlaybackAudio {
   dispose(): void;
 }
 
-/** No browser globals or audio resources are accessed until a user starts playback. */
-export class WebAudioPlayback implements PlaybackAudio {
-  private context: AudioContext | undefined;
-  private readonly voices = new Set<() => void>();
+export const GUITAR_SAMPLES = {
+  E2: "E2.mp3", A2: "A2.mp3", D3: "D3.mp3", G3: "G3.mp3",
+  B3: "B3.mp3", E4: "E4.mp3", A4: "A4.mp3", D5: "D5.mp3",
+} as const;
 
-  constructor(private readonly createContext: () => AudioContext = () => {
-    if (typeof window === "undefined" || !window.AudioContext) {
-      throw new Error("Audio playback is unavailable in this browser.");
-    }
-    return new window.AudioContext();
-  }) {}
+type ToneModule = typeof import("tone");
+export type TonePlaybackRuntime = Pick<ToneModule,
+  "start" | "now" | "immediate" | "Midi" | "Sampler" | "Gain" | "ToneAudioBuffers">;
 
-  async prepare() {
-    this.context ??= this.createContext();
-    await this.context.resume();
-    if (this.context?.state !== "running") {
-      throw new Error("Audio could not start. Try playing again.");
+/** Browser resources belong to this adapter; Tone's shared context does not. */
+export class ToneGuitarPlayback implements PlaybackAudio {
+  private tone: TonePlaybackRuntime | undefined;
+  private buffers: InstanceType<TonePlaybackRuntime["ToneAudioBuffers"]> | undefined;
+  private sampler: InstanceType<TonePlaybackRuntime["Sampler"]> | undefined;
+  private output: InstanceType<TonePlaybackRuntime["Gain"]> | undefined;
+  private preparation: Promise<void> | undefined;
+  private cancelLoading: (() => void) | undefined;
+  private generation = 0;
+
+  constructor(private readonly loadTone: () => Promise<TonePlaybackRuntime> = () => import("tone")) {}
+
+  prepare(): Promise<void> {
+    if (typeof window === "undefined") return Promise.reject(new Error("Audio playback is unavailable in this browser."));
+    if (this.preparation) return this.preparation;
+    const generation = this.generation;
+    const work = this.initialize(generation);
+    this.preparation = work;
+    void work.finally(() => {
+      if (this.preparation === work) this.preparation = undefined;
+    }).catch(() => {});
+    return work;
+  }
+
+  private async initialize(generation: number) {
+    try {
+      const tone = await this.loadTone();
+      if (generation !== this.generation) return;
+      this.tone = tone;
+      await tone.start();
+      if (generation !== this.generation) return;
+      if (!this.buffers) {
+        await new Promise<void>((resolve, reject) => {
+          this.cancelLoading = resolve;
+          this.buffers = new tone.ToneAudioBuffers({
+            urls: GUITAR_SAMPLES,
+            baseUrl: "/audio/guitar-acoustic/",
+            onload: resolve,
+            onerror: () => reject(new Error("Guitar samples could not load. Try playing again.")),
+          });
+        });
+        if (generation !== this.generation) return;
+        this.cancelLoading = undefined;
+      }
+      this.createVoice();
+    } catch (error) {
+      if (generation !== this.generation) return;
+      this.dispose();
+      throw error;
     }
+  }
+
+  private createVoice() {
+    if (this.sampler) return;
+    const tone = this.tone;
+    const buffers = this.buffers;
+    if (!tone || !buffers?.loaded) throw new Error("Audio is not ready.");
+    const urls = Object.fromEntries(Object.keys(GUITAR_SAMPLES).map((pitch) => [pitch, buffers.get(pitch)]));
+    this.output = new tone.Gain(0).toDestination();
+    this.sampler = new tone.Sampler({ urls, volume: -12, release: 0.03 }).connect(this.output);
+    if (!this.sampler.loaded) throw new Error("Audio is not ready.");
   }
 
   play(midiNotes: readonly number[], durationMs: number) {
-    const context = this.context;
-    if (!context || context.state !== "running") throw new Error("Audio is not ready.");
-    const start = context.currentTime;
-    const end = start + durationMs / 1000;
-    for (const midi of midiNotes) {
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
-      oscillator.type = "triangle";
-      oscillator.frequency.setValueAtTime(440 * 2 ** ((midi - 69) / 12), start);
-      gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.18 / Math.max(1, midiNotes.length), start + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.0001, end - 0.03);
-      gain.gain.linearRampToValueAtTime(0, end);
-      oscillator.connect(gain);
-      gain.connect(context.destination);
-      const release = () => {
-        if (!this.voices.delete(release)) return;
-        // Disconnect first: Stop silences even a note with a scheduled future envelope.
-        gain.disconnect();
-        oscillator.disconnect();
-        oscillator.onended = null;
-        oscillator.stop();
-      };
-      this.voices.add(release);
-      oscillator.onended = release;
-      oscillator.start(start);
-      oscillator.stop(end);
-    }
+    this.createVoice();
+    const tone = this.tone;
+    const sampler = this.sampler;
+    const output = this.output;
+    if (!tone || !sampler || !output) throw new Error("Audio is not ready.");
+    output.gain.setValueAtTime(1, tone.immediate());
+    const start = tone.now();
+    sampler.triggerAttackRelease(midiNotes.map((midi) => tone.Midi(midi).toNote()), durationMs / 1000, start);
   }
 
   stop() {
-    for (const release of this.voices) release();
+    const sampler = this.sampler;
+    const output = this.output;
+    this.sampler = undefined;
+    this.output = undefined;
+    if (output && this.tone) output.gain.setValueAtTime(0, this.tone.immediate());
+    if (sampler && this.tone) sampler.releaseAll(this.tone.immediate());
+    // Retire the entire path: a cancelled future attack can never become audible
+    // when the next chord opens its own output gate.
+    sampler?.dispose();
+    output?.dispose();
   }
 
   dispose() {
+    this.generation += 1;
     this.stop();
-    const context = this.context;
-    this.context = undefined;
-    if (context && context.state !== "closed") void context.close().catch(() => {});
+    this.cancelLoading?.();
+    this.cancelLoading = undefined;
+    this.preparation = undefined;
+    this.buffers?.dispose();
+    this.buffers = undefined;
+    this.tone = undefined;
   }
 }
 
@@ -86,7 +131,7 @@ export class PlaybackController {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private revision = 0;
 
-  constructor(private readonly audio: PlaybackAudio = new WebAudioPlayback()) {}
+  constructor(private readonly audio: PlaybackAudio = new ToneGuitarPlayback()) {}
 
   getState = () => this.state;
   subscribe = (listener: () => void) => {
