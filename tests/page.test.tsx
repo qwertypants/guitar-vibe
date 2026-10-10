@@ -95,11 +95,13 @@ test("generation opens Play, position buttons update diagrams, and a failed repl
   expect(alternate).toHaveFocus();
   expect(alternate).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByRole("img", { name: "C, Fret 8 (E-shape), guitar chord diagram" })).toBeVisible();
+  expect(screen.getAllByText("Low E string:").length).toBeGreaterThan(0);
   expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Edit vibe" }));
   fireEvent.click(screen.getByRole("tab", { name: /Mood/ }));
   fireEvent.keyDown(screen.getByRole("tab", { name: /Mood/ }), { key: "ArrowRight" });
   expect(screen.getByRole("tab", { name: "Choose vibe" })).toHaveAttribute("aria-selected", "true");
+  expect(alternate).toHaveAttribute("aria-pressed", "true");
   fireEvent.click(screen.getByRole("tab", { name: /Mood/ }));
   fireEvent.click(screen.getByRole("button", { name: "Dreamy" }));
   fireEvent.click(screen.getByRole("button", { name: "Generate another" }));

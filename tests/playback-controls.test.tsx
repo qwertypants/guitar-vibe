@@ -53,6 +53,9 @@ test("accessible controls switch modes, stop on selection/regeneration and relea
   fireEvent.click(screen.getByRole("button", { name: "Stop progression" }));
   expect(screen.getByRole("status")).toHaveTextContent("Playback stopped.");
   await act(async () => { await controller.sequence(selected); });
+  rerender(<StrictMode><PlaybackControls voicings={selected} active={false} createController={() => controller} /></StrictMode>);
+  expect(controller.getState().kind).toBe("idle");
+  await act(async () => { await controller.sequence(selected); });
   rerender(<StrictMode><PlaybackControls voicings={voicings("G")} createController={() => controller} /></StrictMode>);
   expect(controller.getState().kind).toBe("idle");
   await act(async () => { await controller.preview(selected[0]); });

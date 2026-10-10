@@ -6,14 +6,14 @@ import { PlaybackControls } from "@/components/PlaybackControls";
 import type { ProgressionCard } from "@/lib/progression";
 import type { ChordVoicing } from "@/lib/voicings";
 
-export function ProgressionResult({ chords }: { chords: readonly ProgressionCard[] }) {
+export function ProgressionResult({ chords, active = true }: { chords: readonly ProgressionCard[]; active?: boolean }) {
   const [positions, setPositions] = useState<number[]>(() => chords.map(() => 0));
   const selected: ChordVoicing[] = chords.map((chord, index) => chord.voicings[positions[index] ?? 0] ?? chord.voicings[0]!);
 
   return (
     <div className="space-y-4 pt-2">
       <h2 className="text-2xl font-semibold">Your chord progression</h2>
-      <PlaybackControls voicings={selected}>
+      <PlaybackControls voicings={selected} active={active}>
         {(voicing, index) => {
           const options = chords[index]?.voicings ?? [];
           return (

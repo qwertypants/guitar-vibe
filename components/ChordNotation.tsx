@@ -54,7 +54,10 @@ export function ChordNotation({ voicing }: { voicing: ChordVoicing }) {
       <div className="chord-details space-y-2" aria-label="Chord details">
         <div className="flex flex-wrap items-center gap-1" aria-label="Strings, low E to high E">
           <span className="detail-label">Frets</span>
-          {voicing.frets.map((fret, index) => <span className="fret-pill" key={index} title={`${["Low E", "A", "D", "G", "B", "High E"][index]}: ${fret ?? "muted"}`}>{fret ?? "×"}</span>)}
+          {voicing.frets.map((fret, index) => <span className="fret-pill" key={index}>
+            <span className="sr-only">{["Low E string", "A string", "D string", "G string", "B string", "High E string"][index]}: </span>
+            {fret ?? "×"}
+          </span>)}
         </div>
         <div className="flex flex-wrap items-center gap-1">
           <span className="detail-label">Notes</span>

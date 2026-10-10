@@ -149,12 +149,12 @@ export function VibeChooser() {
         </div>
         {error && <p role="alert" className="text-sm">{error}</p>}
         </div>
-        {view === "play" && progression && <div className="space-y-5">
+        {progression && <div hidden={view !== "play"} className="space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted">{getSelectedVibes(generatedSelection).map((vibe) => vibe.label).join(" · ")}</p>
             <button type="button" className="min-h-11 rounded-full border border-foreground/20 px-4 text-sm" onClick={() => setView("choose")}>Edit vibe</button>
           </div>
-          <ProgressionResult key={JSON.stringify(progression)} chords={progression} />
+          <ProgressionResult key={JSON.stringify(progression)} chords={progression} active={view === "play"} />
         </div>}
       </Tabs>
       {helpOpen && <dialog ref={helpDialog} aria-labelledby="help-title" onCancel={(event) => {

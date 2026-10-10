@@ -5,8 +5,9 @@ import { UiIcon } from "@/components/UiIcon";
 import { PlaybackController } from "@/lib/playback";
 import type { ChordVoicing } from "@/lib/voicings";
 
-export function PlaybackControls({ voicings, children, createController = () => new PlaybackController() }: {
+export function PlaybackControls({ voicings, children, active = true, createController = () => new PlaybackController() }: {
   voicings: readonly ChordVoicing[];
+  active?: boolean;
   children?: (voicing: ChordVoicing, index: number) => ReactNode;
   createController?: () => PlaybackController;
 }) {
@@ -18,6 +19,9 @@ export function PlaybackControls({ voicings, children, createController = () => 
     // Changing displayed selections or regenerating a progression cancels its old audio.
     return controller.stop;
   }, [controller, voicings]);
+  useEffect(() => {
+    if (!active) controller.stop();
+  }, [active, controller]);
   useEffect(() => controller.dispose, [controller]);
 
   const start = (play: () => Promise<void>) => {
