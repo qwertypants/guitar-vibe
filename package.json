@@ -17,7 +17,9 @@
     "eval:models": "node --conditions=react-server --import tsx evals/run.ts"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "client-only": "0.0.1",
+    "gsap": "^3.15.0",
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",

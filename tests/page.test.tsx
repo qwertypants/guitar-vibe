@@ -4,7 +4,7 @@ import { resolveProgression } from "@/lib/progression";
 import Home from "@/app/page";
 
 beforeEach(() => {
-  vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+  vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
   HTMLDialogElement.prototype.showModal = function () {
     this.setAttribute("open", "");
   };

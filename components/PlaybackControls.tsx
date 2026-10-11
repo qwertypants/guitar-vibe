@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useId, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { UiIcon } from "@/components/UiIcon";
 import { PlaybackController } from "@/lib/playback";
 import type { ChordVoicing } from "@/lib/voicings";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { reducedMotion } from "@/lib/motion";
 
 export function PlaybackControls({ voicings, children, active = true, createController = () => new PlaybackController() }: {
   voicings: readonly ChordVoicing[];
@@ -15,6 +18,16 @@ export function PlaybackControls({ voicings, children, active = true, createCont
   const state = useSyncExternalStore(controller.subscribe, controller.getState, controller.getState);
   const [error, setError] = useState<string | null>(null);
   const orderHintId = useId();
+  const grid = useRef<HTMLOListElement>(null);
+  useGSAP(() => {
+    if (reducedMotion() || state.kind === "idle") return;
+    const index = state.kind === "sequence" ? state.index : voicings.findIndex((voicing) => voicing.id === state.voicingId);
+    const name = grid.current?.children[index]?.querySelector<HTMLElement>(".chord-name");
+    if (!name) return;
+    const tween = gsap.fromTo(name, { scale: 1.22, rotation: -5, y: -8 },
+      { scale: 1, rotation: 0, y: 0, duration: 0.53, ease: "elastic.out(1, 0.42)", overwrite: "auto" });
+    return () => { tween.kill(); gsap.set(name, { clearProps: "transform" }); };
+  }, { scope: grid, dependencies: [state] });
   useEffect(() => {
     if (!active) controller.stop();
   }, [active, controller]);
@@ -50,7 +63,7 @@ export function PlaybackControls({ voicings, children, active = true, createCont
       <p id={orderHintId} className="sr-only">Preview a chord or play the full progression in order.</p>
       <div role="region" aria-label="Chord progression" aria-describedby={orderHintId} tabIndex={0}
         className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-2">
-        <ol role="list" className="progression-grid grid grid-cols-1 gap-5">
+        <ol ref={grid} role="list" className="progression-grid grid grid-cols-1 gap-5">
           {voicings.map((voicing, index) => {
             const active = state.kind === "sequence" ? state.index === index
               : state.kind === "preview" && state.voicingId === voicing.id;

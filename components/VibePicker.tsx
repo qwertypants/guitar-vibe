@@ -1,6 +1,9 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { reducedMotion } from "@/lib/motion";
 import { Tabs } from "@/components/Tabs";
 import { UiIcon } from "@/components/UiIcon";
 import {
@@ -25,13 +28,37 @@ export function VibePicker({ value, onChange, disabled = false, showSurpriseActi
   const [facet, setFacet] = useState<(typeof vibeFacets)[number]["id"]>("mood");
   const matches = searchVibes(query);
   const selected = getSelectedVibes(value);
+  const root = useRef<HTMLElement>(null);
+  const lastFacet = useRef(facet);
+  const lastSelected = useRef<string[]>([]);
+  const selectedIds = selected.map((option) => option.id).join("|");
+  useGSAP(() => {
+    const previousFacet = lastFacet.current;
+    const previousSelected = lastSelected.current;
+    lastFacet.current = facet;
+    lastSelected.current = selected.map((option) => option.id);
+    if (reducedMotion()) return;
+    if (previousFacet !== facet) {
+      const options = root.current?.querySelectorAll<HTMLElement>(".vibe-options button");
+      if (options?.length) gsap.fromTo(options,
+        { autoAlpha: 0, y: 34, rotation: (index: number) => index % 2 ? 7 : -7, scale: 0.82 },
+        { autoAlpha: 1, y: 0, rotation: 0, scale: 1, duration: 0.55, ease: "back.out(1.6)", stagger: 0.045,
+          onComplete: () => gsap.set(options, { clearProps: "opacity,visibility,transform" }) });
+    }
+    const added = selected.filter((option) => !previousSelected.includes(option.id));
+    const chips = added.map((option) => root.current?.querySelector<HTMLElement>(`[data-selected-vibe="${option.id}"]`)).filter((node): node is HTMLElement => !!node);
+    if (chips.length) gsap.fromTo(chips, { autoAlpha: 0, y: -22, scale: 0.5, rotation: -12 },
+      { autoAlpha: 1, y: 0, scale: 1, rotation: 0, duration: 0.55, ease: "back.out(2)",
+        onComplete: () => gsap.set(chips, { clearProps: "opacity,visibility,transform" }) });
+  }, { scope: root, dependencies: [facet, selectedIds], revertOnUpdate: true });
 
   const renderOptions = (options: typeof matches) => (
-    <div className="flex flex-wrap gap-2">
+    <div className="vibe-options flex flex-wrap gap-2">
       {options.map((option) => {
         const pressed = value[option.facet]?.id === option.id;
         return (
           <button
+            data-intro
             key={option.id}
             type="button"
             aria-pressed={pressed}
@@ -47,11 +74,11 @@ export function VibePicker({ value, onChange, disabled = false, showSurpriseActi
   );
 
   return (
-    <section aria-label="Choose your vibe" className="space-y-5">
+    <section ref={root} aria-label="Choose your vibe" className="space-y-5">
       <Tabs label="Vibe categories" items={vibeFacets.map((item) => ({ id: item.id, label: item.label + (value[item.id] ? " ✓" : "") }))} value={facet} onChange={setFacet}>
         <div className="space-y-4">
           <label htmlFor={searchId} className="sr-only">Search vibes</label>
-          <input id={searchId} type="search" value={query} onChange={(event) => setQuery(event.target.value)} disabled={disabled}
+          <input data-intro id={searchId} type="search" value={query} onChange={(event) => setQuery(event.target.value)} disabled={disabled}
             placeholder="Search vibes" className="min-h-11 w-full rounded-lg border border-foreground/15 bg-card px-3 text-sm" />
           <fieldset disabled={disabled} className="min-h-40">
             <legend className="sr-only">{vibeFacets.find((item) => item.id === facet)?.label}</legend>
@@ -66,7 +93,7 @@ export function VibePicker({ value, onChange, disabled = false, showSurpriseActi
           <p className="text-sm font-medium">Your selection</p>
           <div className="flex flex-wrap gap-2">
             {selected.map((option) => (
-              <button key={option.id} type="button" aria-label={`Remove ${option.label}`}
+              <button data-selected-vibe={option.id} key={option.id} type="button" aria-label={`Remove ${option.label}`}
                 onClick={() => onChange(removeVibe(value, option.facet))} disabled={disabled}
                 className="min-h-11 max-w-full rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-sm break-words focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-50">
                 {vibeFacets.find((facet) => facet.id === option.facet)?.label}: {option.label} ×

@@ -17,6 +17,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
+      <head><script dangerouslySetInnerHTML={{ __html: "if(typeof matchMedia==='function'&&!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.dataset.motionBoot='pending';setTimeout(()=>document.documentElement.removeAttribute('data-motion-boot'),1200)}" }} /></head>
       <body>{children}</body>
     </html>
   );

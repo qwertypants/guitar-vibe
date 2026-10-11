@@ -86,13 +86,19 @@ button:disabled { cursor: default; opacity: 0.5; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 dialog { color: var(--foreground); background: var(--card); }
 dialog::backdrop { background: rgb(0 0 0 / 45%); }
+html[data-motion-boot="pending"] [data-intro] { visibility: hidden; }
+.motion-stage { overflow-x: clip; }
+.motion-ripple { position: absolute; z-index: 0; border-radius: 50%; background: currentColor; pointer-events: none; }
+.motion-stage button { position: relative; overflow: clip; }
+.motion-stage button > :not(.motion-ripple) { position: relative; z-index: 1; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
-.tab-bar { display: flex; gap: .25rem; flex-wrap: wrap; border-bottom: 1px solid color-mix(in srgb, var(--foreground) 15%, transparent); }
+.tab-bar { position: relative; display: flex; gap: .25rem; flex-wrap: wrap; border-bottom: 1px solid color-mix(in srgb, var(--foreground) 15%, transparent); }
 .tab-bar button { min-height: 44px; padding: .6rem 1rem; color: var(--muted); border-bottom: 2px solid transparent; font-size: .875rem; }
-.tab-bar button[aria-selected="true"] { color: var(--accent); border-color: var(--accent); }
+.tab-bar button[aria-selected="true"] { color: var(--accent); }
+.tab-indicator { position: absolute; bottom: -1px; left: 0; width: 1px; height: 2px; background: var(--accent); transform-origin: left center; pointer-events: none; }
 .chord-name { font-family: Georgia, "Times New Roman", serif; font-size: 3rem; font-weight: 400; letter-spacing: -.055em; line-height: 1.1; }
 .chord-details { font-family: "Courier New", monospace; font-size: .75rem; }
 .detail-label { font-family: Arial, sans-serif; font-size: .65rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
