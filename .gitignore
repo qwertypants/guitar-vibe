@@ -22,3 +22,6 @@ next-env.d.ts
 # Local logs and operating-system files
 npm-debug.log*
 .DS_Store
+
+# Transient benchmark runs; curated results may be committed.
+/evals/output/

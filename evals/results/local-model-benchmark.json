@@ -1,0 +1,4829 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-11T10:15:34.561Z",
+  "limitations": "Automatic tonal-coherence and vibe checks are transparent proxies, not human judgments. Borrowed harmony may fail the common-scale heuristic. These checks do not replace listening or a human vibe assessment. Benchmarks apply only to this shortlist and hardware. First request is not cold: no model is unloaded. Ollama residency estimates are not process RSS or total system memory.",
+  "hardware": {
+    "platform": "darwin",
+    "release": "25.6.0",
+    "arch": "arm64",
+    "cpu": "Apple M3 Max",
+    "logicalCpus": 16,
+    "systemMemoryBytes": 51539607552,
+    "node": "v26.7.0"
+  },
+  "settings": {
+    "baseUrl": "http://127.0.0.1:11434",
+    "temperature": 0.2,
+    "num_ctx": 2048,
+    "num_predict": 128,
+    "think": false,
+    "keep_alive": "5m",
+    "seeds": [
+      4242,
+      4243,
+      4244
+    ],
+    "runs": 3,
+    "concurrency": 1,
+    "unloadingPerformed": false,
+    "percentileMethod": "nearest rank; scored requests including failures; first and warmup excluded"
+  },
+  "gates": {
+    "validPlayableRate": 1,
+    "proxyPassRate": 0.8,
+    "distinctProgressions": 3
+  },
+  "proxyDefinitions": {
+    "minor": "At least one minor triad or minor seventh",
+    "major-opening": "First chord is a major triad, major seventh or dominant seventh",
+    "seventh": "At least one dominant, major or minor seventh",
+    "triads": "At least 75% major/minor triads",
+    "blues": "All chords dominant sevenths with exactly I, IV and V roots for some tonic",
+    "coherence": "At least 75% whole chords fit one common major or natural-minor pitch-class set; blues uses root relationship instead",
+    "variety": "At least two distinct chords per progression and three exact ordered chord arrays across the corpus"
+  },
+  "corpus": [
+    {
+      "id": "melancholy",
+      "vibeIds": [
+        "mood-melancholy"
+      ],
+      "expectations": [
+        "minor"
+      ],
+      "holdout": false
+    },
+    {
+      "id": "dark",
+      "vibeIds": [
+        "mood-dark"
+      ],
+      "expectations": [
+        "minor"
+      ],
+      "holdout": false
+    },
+    {
+      "id": "joyful",
+      "vibeIds": [
+        "mood-joyful"
+      ],
+      "expectations": [
+        "major-opening"
+      ],
+      "holdout": false
+    },
+    {
+      "id": "hopeful",
+      "vibeIds": [
+        "mood-hopeful"
+      ],
+      "expectations": [
+        "major-opening"
+      ],
+      "holdout": false
+    },
+    {
+      "id": "blues",
+      "vibeIds": [
+        "genre-blues"
+      ],
+      "expectations": [
+        "blues"
+      ],
+      "holdout": false
+    },
+    {
+      "id": "jazz",
+      "vibeIds": [
+        "genre-jazz"
+      ],
+      "expectations": [
+        "seventh"
+      ],
+      "holdout": false
+    },
+    {
+      "id": "neo-soul",
+      "vibeIds": [
+        "genre-neo-soul"
+      ],
+      "expectations": [
+        "seventh"
+      ],
+      "holdout": false
+    },
+    {
+      "id": "folk",
+      "vibeIds": [
+        "genre-folk"
+      ],
+      "expectations": [
+        "triads"
+      ],
+      "holdout": false
+    },
+    {
+      "id": "pop",
+      "vibeIds": [
+        "genre-pop"
+      ],
+      "expectations": [
+        "triads"
+      ],
+      "holdout": false
+    },
+    {
+      "id": "era-setting",
+      "vibeIds": [
+        "era-80s",
+        "setting-city-lights",
+        "energy-steady"
+      ],
+      "expectations": [],
+      "holdout": false
+    },
+    {
+      "id": "holdout-dark-folk",
+      "vibeIds": [
+        "mood-dark",
+        "genre-folk",
+        "era-60s",
+        "setting-porch-swing",
+        "energy-gentle"
+      ],
+      "expectations": [
+        "minor",
+        "triads"
+      ],
+      "holdout": true
+    },
+    {
+      "id": "holdout-joyful-pop",
+      "vibeIds": [
+        "mood-joyful",
+        "genre-pop",
+        "era-2000s",
+        "setting-open-road",
+        "energy-uplifting"
+      ],
+      "expectations": [
+        "major-opening",
+        "triads"
+      ],
+      "holdout": true
+    },
+    {
+      "id": "holdout-melancholy-jazz",
+      "vibeIds": [
+        "mood-melancholy",
+        "genre-jazz",
+        "setting-coffee-shop",
+        "energy-laid-back"
+      ],
+      "expectations": [
+        "minor",
+        "seventh"
+      ],
+      "holdout": true
+    },
+    {
+      "id": "holdout-blues",
+      "vibeIds": [
+        "genre-blues",
+        "era-70s",
+        "setting-campfire",
+        "energy-driving"
+      ],
+      "expectations": [
+        "blues"
+      ],
+      "holdout": true
+    }
+  ],
+  "models": [
+    {
+      "model": "qwen2.5:0.5b-instruct-q4_K_M",
+      "metadataBefore": {
+        "errors": [],
+        "installed": {
+          "name": "qwen2.5:0.5b-instruct-q4_K_M",
+          "digest": "a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67",
+          "size": 397821319,
+          "details": {
+            "parameter_size": "494.03M",
+            "quantization_level": "Q4_K_M"
+          }
+        },
+        "show": {
+          "details": {
+            "parameter_size": "494.03M",
+            "quantization_level": "Q4_K_M"
+          },
+          "model_info": {
+            "general.architecture": "qwen2",
+            "general.base_model.0.name": "Qwen2.5 0.5B",
+            "general.base_model.0.organization": "Qwen",
+            "general.base_model.0.repo_url": "https://huggingface.co/Qwen/Qwen2.5-0.5B",
+            "general.base_model.count": 1,
+            "general.basename": "Qwen2.5",
+            "general.file_type": 15,
+            "general.finetune": "Instruct",
+            "general.languages": [
+              "en"
+            ],
+            "general.license": "apache-2.0",
+            "general.license.link": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/blob/main/LICENSE",
+            "general.parameter_count": 494032768,
+            "general.quantization_version": 2,
+            "general.size_label": "0.5B",
+            "general.tags": [
+              "chat",
+              "text-generation"
+            ],
+            "general.type": "model",
+            "qwen2.attention.head_count": 14,
+            "qwen2.attention.head_count_kv": 2,
+            "qwen2.attention.layer_norm_rms_epsilon": 0.000001,
+            "qwen2.block_count": 24,
+            "qwen2.context_length": 32768,
+            "qwen2.embedding_length": 896,
+            "qwen2.feed_forward_length": 4864,
+            "qwen2.rope.freq_base": 1000000,
+            "tokenizer.ggml.add_bos_token": false,
+            "tokenizer.ggml.bos_token_id": 151643,
+            "tokenizer.ggml.eos_token_id": 151645,
+            "tokenizer.ggml.merges": [],
+            "tokenizer.ggml.model": "gpt2",
+            "tokenizer.ggml.padding_token_id": 151643,
+            "tokenizer.ggml.pre": "qwen2",
+            "tokenizer.ggml.token_type": [],
+            "tokenizer.ggml.tokens": []
+          }
+        },
+        "loaded": {
+          "name": "qwen2.5:0.5b-instruct-q4_K_M",
+          "digest": "a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67",
+          "size": 452691229,
+          "size_vram": 452691229,
+          "expires_at": "2026-10-11T06:17:21.205879-04:00"
+        }
+      },
+      "metadataAfter": {
+        "errors": [],
+        "installed": {
+          "name": "qwen2.5:0.5b-instruct-q4_K_M",
+          "digest": "a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67",
+          "size": 397821319,
+          "details": {
+            "parameter_size": "494.03M",
+            "quantization_level": "Q4_K_M"
+          }
+        },
+        "show": {
+          "details": {
+            "parameter_size": "494.03M",
+            "quantization_level": "Q4_K_M"
+          },
+          "model_info": {
+            "general.architecture": "qwen2",
+            "general.base_model.0.name": "Qwen2.5 0.5B",
+            "general.base_model.0.organization": "Qwen",
+            "general.base_model.0.repo_url": "https://huggingface.co/Qwen/Qwen2.5-0.5B",
+            "general.base_model.count": 1,
+            "general.basename": "Qwen2.5",
+            "general.file_type": 15,
+            "general.finetune": "Instruct",
+            "general.languages": [
+              "en"
+            ],
+            "general.license": "apache-2.0",
+            "general.license.link": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/blob/main/LICENSE",
+            "general.parameter_count": 494032768,
+            "general.quantization_version": 2,
+            "general.size_label": "0.5B",
+            "general.tags": [
+              "chat",
+              "text-generation"
+            ],
+            "general.type": "model",
+            "qwen2.attention.head_count": 14,
+            "qwen2.attention.head_count_kv": 2,
+            "qwen2.attention.layer_norm_rms_epsilon": 0.000001,
+            "qwen2.block_count": 24,
+            "qwen2.context_length": 32768,
+            "qwen2.embedding_length": 896,
+            "qwen2.feed_forward_length": 4864,
+            "qwen2.rope.freq_base": 1000000,
+            "tokenizer.ggml.add_bos_token": false,
+            "tokenizer.ggml.bos_token_id": 151643,
+            "tokenizer.ggml.eos_token_id": 151645,
+            "tokenizer.ggml.merges": [],
+            "tokenizer.ggml.model": "gpt2",
+            "tokenizer.ggml.padding_token_id": 151643,
+            "tokenizer.ggml.pre": "qwen2",
+            "tokenizer.ggml.token_type": [],
+            "tokenizer.ggml.tokens": []
+          }
+        },
+        "loaded": {
+          "name": "qwen2.5:0.5b-instruct-q4_K_M",
+          "digest": "a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67",
+          "size": 452691229,
+          "size_vram": 452691229,
+          "expires_at": "2026-10-11T06:19:55.072863-04:00"
+        }
+      },
+      "samples": [
+        {
+          "kind": "accepted",
+          "phase": "first-request",
+          "caseId": "melancholy",
+          "seed": 4240,
+          "chords": [
+            "Am7",
+            "F7",
+            "G7",
+            "C7",
+            "D7",
+            "E7",
+            "F7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 269.834875,
+            "loadMs": 4.126417,
+            "promptTokens": 201,
+            "outputTokens": 51,
+            "generationMs": 200.876
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.375; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "discarded-warmup",
+          "caseId": "melancholy",
+          "seed": 4241,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "Dm7",
+            "E7",
+            "Fmaj7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 225.02558299999998,
+            "loadMs": 1.88425,
+            "promptTokens": 201,
+            "outputTokens": 55,
+            "generationMs": 208.322
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.875; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "melancholy",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Fmaj7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 215.71383400000002,
+            "loadMs": 1.654125,
+            "promptTokens": 201,
+            "outputTokens": 54,
+            "generationMs": 200.25
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "melancholy",
+          "seed": 4243,
+          "chords": [
+            "Dm7",
+            "G7",
+            "Fmaj7",
+            "Cmaj7",
+            "E7",
+            "G7",
+            "Fmaj7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 226.17004200000008,
+            "loadMs": 1.757292,
+            "promptTokens": 201,
+            "outputTokens": 56,
+            "generationMs": 209.807
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.875; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "melancholy",
+          "seed": 4244,
+          "chords": [
+            "Dm7",
+            "G7",
+            "Am7",
+            "Fmaj7",
+            "Cmaj7",
+            "Dm7",
+            "G7",
+            "Am7"
+          ],
+          "metrics": {
+            "wallMs": 225.82999999999993,
+            "loadMs": 1.946333,
+            "promptTokens": 201,
+            "outputTokens": 55,
+            "generationMs": 209.146
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 1.000; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "dark",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "G7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 241.42654199999993,
+            "loadMs": 1.945959,
+            "promptTokens": 199,
+            "outputTokens": 54,
+            "generationMs": 208.375
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "dark",
+          "seed": 4243,
+          "chords": [
+            "Dm7",
+            "G7",
+            "Cmaj7",
+            "Fmaj7",
+            "A7",
+            "E7",
+            "B7",
+            "D7"
+          ],
+          "metrics": {
+            "wallMs": 223.683583,
+            "loadMs": 1.963417,
+            "promptTokens": 199,
+            "outputTokens": 54,
+            "generationMs": 205.384
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "dark",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Dmaj7",
+            "E7",
+            "Fmaj7",
+            "G7",
+            "A7",
+            "B7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 200.83574999999996,
+            "loadMs": 2.226708,
+            "promptTokens": 199,
+            "outputTokens": 48,
+            "generationMs": 183.647
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "minor: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "joyful",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Bm7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 216.62837499999978,
+            "loadMs": 1.901,
+            "promptTokens": 200,
+            "outputTokens": 54,
+            "generationMs": 184.299
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "major-opening: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "joyful",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Fmaj7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 200.26637500000015,
+            "loadMs": 1.895625,
+            "promptTokens": 200,
+            "outputTokens": 54,
+            "generationMs": 183.29
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "joyful",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "G7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 199.28549999999996,
+            "loadMs": 1.96625,
+            "promptTokens": 200,
+            "outputTokens": 54,
+            "generationMs": 182.401
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "hopeful",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Bm7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 218.37970900000028,
+            "loadMs": 2.143542,
+            "promptTokens": 200,
+            "outputTokens": 54,
+            "generationMs": 184.883
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "major-opening: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "hopeful",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Fmaj7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 202.12108399999988,
+            "loadMs": 2.065584,
+            "promptTokens": 200,
+            "outputTokens": 54,
+            "generationMs": 185.435
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "hopeful",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "G7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 199.39274999999998,
+            "loadMs": 1.960625,
+            "promptTokens": 200,
+            "outputTokens": 54,
+            "generationMs": 182.997
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "blues",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "B7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 212.90912500000013,
+            "loadMs": 1.9655,
+            "promptTokens": 198,
+            "outputTokens": 53,
+            "generationMs": 180.389
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "blues",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "B7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 189.93316700000014,
+            "loadMs": 1.880209,
+            "promptTokens": 198,
+            "outputTokens": 53,
+            "generationMs": 173.501
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "blues",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Fmaj7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 207.25620800000024,
+            "loadMs": 2.244625,
+            "promptTokens": 198,
+            "outputTokens": 54,
+            "generationMs": 189.079
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "jazz",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "B7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 214.80416699999978,
+            "loadMs": 2.136042,
+            "promptTokens": 198,
+            "outputTokens": 53,
+            "generationMs": 181.351
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "jazz",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "B7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 188.05162500000006,
+            "loadMs": 2.022167,
+            "promptTokens": 198,
+            "outputTokens": 53,
+            "generationMs": 171.358
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "jazz",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Fmaj7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 205.61024999999972,
+            "loadMs": 2.751084,
+            "promptTokens": 198,
+            "outputTokens": 54,
+            "generationMs": 186.896
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "neo-soul",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "B7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 215.01033300000017,
+            "loadMs": 2.151667,
+            "promptTokens": 200,
+            "outputTokens": 53,
+            "generationMs": 181.06
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "neo-soul",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "F7",
+            "G7",
+            "C7",
+            "D7",
+            "E7",
+            "F7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 189.43908400000055,
+            "loadMs": 2.248625,
+            "promptTokens": 200,
+            "outputTokens": 51,
+            "generationMs": 172.676
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.375; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "neo-soul",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Fmaj7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 199.58270900000025,
+            "loadMs": 1.924917,
+            "promptTokens": 200,
+            "outputTokens": 54,
+            "generationMs": 183.304
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "folk",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "B7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 213.6715409999997,
+            "loadMs": 1.852208,
+            "promptTokens": 198,
+            "outputTokens": 53,
+            "generationMs": 181.34
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "folk",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "F7",
+            "G7",
+            "C7",
+            "D7",
+            "E7",
+            "F7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 190.68316699999923,
+            "loadMs": 1.88225,
+            "promptTokens": 198,
+            "outputTokens": 51,
+            "generationMs": 173.728
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.375; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "folk",
+          "seed": 4244,
+          "chords": [
+            "Am",
+            "F",
+            "G",
+            "C",
+            "E",
+            "B",
+            "D",
+            "A"
+          ],
+          "metrics": {
+            "wallMs": 130.37495899999976,
+            "loadMs": 1.895625,
+            "promptTokens": 198,
+            "outputTokens": 36,
+            "generationMs": 114.191
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "triads: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "pop",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Bm7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 219.70887500000026,
+            "loadMs": 2.204042,
+            "promptTokens": 198,
+            "outputTokens": 54,
+            "generationMs": 185.373
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "pop",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "F7",
+            "G7",
+            "C7",
+            "D7",
+            "E7",
+            "F7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 192.4794579999998,
+            "loadMs": 1.95325,
+            "promptTokens": 198,
+            "outputTokens": 51,
+            "generationMs": 175.104
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.375; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "pop",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Fmaj7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 199.20945800000027,
+            "loadMs": 2.229875,
+            "promptTokens": 198,
+            "outputTokens": 54,
+            "generationMs": 182.061
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "era-setting",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Bm7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 217.12304200000017,
+            "loadMs": 1.791834,
+            "promptTokens": 211,
+            "outputTokens": 54,
+            "generationMs": 184.036
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "No additional vibe claim for these vague settings/eras/energies."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "era-setting",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "B7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 197.04204200000004,
+            "loadMs": 1.881,
+            "promptTokens": 211,
+            "outputTokens": 53,
+            "generationMs": 180.095
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "No additional vibe claim for these vague settings/eras/energies."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "era-setting",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Fmaj7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 201.75004100000024,
+            "loadMs": 3.529417,
+            "promptTokens": 211,
+            "outputTokens": 54,
+            "generationMs": 182.891
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "No additional vibe claim for these vague settings/eras/energies."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-dark-folk",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Fmaj7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 241.10491700000057,
+            "loadMs": 1.886416,
+            "promptTokens": 220,
+            "outputTokens": 54,
+            "generationMs": 207.763
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "minor: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-dark-folk",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "F7",
+            "G7",
+            "C7",
+            "D7",
+            "E7",
+            "B7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 213.42141699999956,
+            "loadMs": 1.814084,
+            "promptTokens": 220,
+            "outputTokens": 51,
+            "generationMs": 196.639
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.250; requires >=0.75.",
+              "minor: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-dark-folk",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Bm7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 223.44466699999975,
+            "loadMs": 1.8115,
+            "promptTokens": 220,
+            "outputTokens": 54,
+            "generationMs": 206.093
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "minor: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-joyful-pop",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Bm7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 217.7500829999999,
+            "loadMs": 1.862625,
+            "promptTokens": 224,
+            "outputTokens": 54,
+            "generationMs": 184.981
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "major-opening: false.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-joyful-pop",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "B7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 191.3675830000002,
+            "loadMs": 1.961583,
+            "promptTokens": 224,
+            "outputTokens": 53,
+            "generationMs": 173.417
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "major-opening: false.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-joyful-pop",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Fmaj7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 205.83787500000017,
+            "loadMs": 1.920375,
+            "promptTokens": 224,
+            "outputTokens": 54,
+            "generationMs": 187.377
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: false.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-melancholy-jazz",
+          "seed": 4242,
+          "chords": [
+            "Dm7",
+            "G7",
+            "Am7",
+            "F7",
+            "Cmaj7",
+            "E7",
+            "G7",
+            "Dm7"
+          ],
+          "metrics": {
+            "wallMs": 241.07016699999895,
+            "loadMs": 1.968167,
+            "promptTokens": 216,
+            "outputTokens": 54,
+            "generationMs": 207.74
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "minor: true.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-melancholy-jazz",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "D7",
+            "E7",
+            "Fmaj7",
+            "G7",
+            "A7",
+            "B7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 199.4245409999985,
+            "loadMs": 1.8455,
+            "promptTokens": 216,
+            "outputTokens": 47,
+            "generationMs": 182.159
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "minor: false.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-melancholy-jazz",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Dmaj7",
+            "E7",
+            "Fmaj7",
+            "G7",
+            "A7",
+            "B7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 203.4984170000007,
+            "loadMs": 1.813375,
+            "promptTokens": 216,
+            "outputTokens": 48,
+            "generationMs": 186.691
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "minor: false.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-blues",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "B7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 214.1537499999995,
+            "loadMs": 1.833625,
+            "promptTokens": 214,
+            "outputTokens": 53,
+            "generationMs": 181.409
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-blues",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "B7",
+            "G7"
+          ],
+          "metrics": {
+            "wallMs": 198.0099590000009,
+            "loadMs": 1.775834,
+            "promptTokens": 214,
+            "outputTokens": 53,
+            "generationMs": 180.773
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-blues",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "G7",
+            "Cmaj7",
+            "D7",
+            "E7",
+            "B7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 198.2353750000002,
+            "loadMs": 1.800291,
+            "promptTokens": 214,
+            "outputTokens": 53,
+            "generationMs": 181.249
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        }
+      ],
+      "summary": {
+        "model": "qwen2.5:0.5b-instruct-q4_K_M",
+        "loadedBytes": 452691229,
+        "sampleCount": 42,
+        "failureCount": 0,
+        "validRate": 1,
+        "proxyPassRate": 0.19047619047619047,
+        "distinctProgressions": 15,
+        "passes": false,
+        "p50WarmWallMs": 205.61024999999972,
+        "p95WarmWallMs": 241.07016699999895,
+        "maximumLoadMs": 4.126417
+      }
+    },
+    {
+      "model": "qwen2.5:1.5b-instruct-q4_K_M",
+      "metadataBefore": {
+        "errors": [],
+        "installed": {
+          "name": "qwen2.5:1.5b-instruct-q4_K_M",
+          "digest": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+          "size": 986061892,
+          "details": {
+            "parameter_size": "1.5B",
+            "quantization_level": "Q4_K_M"
+          }
+        },
+        "show": {
+          "details": {
+            "parameter_size": "1.5B",
+            "quantization_level": "Q4_K_M"
+          },
+          "model_info": {
+            "general.architecture": "qwen2",
+            "general.base_model.0.name": "Qwen2.5 1.5B",
+            "general.base_model.0.organization": "Qwen",
+            "general.base_model.0.repo_url": "https://huggingface.co/Qwen/Qwen2.5-1.5B",
+            "general.base_model.count": 1,
+            "general.basename": "Qwen2.5",
+            "general.file_type": 15,
+            "general.finetune": "Instruct",
+            "general.languages": [
+              "en"
+            ],
+            "general.license": "apache-2.0",
+            "general.license.link": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct/blob/main/LICENSE",
+            "general.parameter_count": 1543714304,
+            "general.quantization_version": 2,
+            "general.size_label": "1.5B",
+            "general.tags": [
+              "chat",
+              "text-generation"
+            ],
+            "general.type": "model",
+            "qwen2.attention.head_count": 12,
+            "qwen2.attention.head_count_kv": 2,
+            "qwen2.attention.layer_norm_rms_epsilon": 0.000001,
+            "qwen2.block_count": 28,
+            "qwen2.context_length": 32768,
+            "qwen2.embedding_length": 1536,
+            "qwen2.feed_forward_length": 8960,
+            "qwen2.rope.freq_base": 1000000,
+            "tokenizer.ggml.add_bos_token": false,
+            "tokenizer.ggml.bos_token_id": 151643,
+            "tokenizer.ggml.eos_token_id": 151645,
+            "tokenizer.ggml.merges": [],
+            "tokenizer.ggml.model": "gpt2",
+            "tokenizer.ggml.padding_token_id": 151643,
+            "tokenizer.ggml.pre": "qwen2",
+            "tokenizer.ggml.token_type": [],
+            "tokenizer.ggml.tokens": []
+          }
+        },
+        "loaded": {
+          "name": "qwen2.5:1.5b-instruct-q4_K_M",
+          "digest": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+          "size": 1102263090,
+          "size_vram": 1102263090,
+          "expires_at": "2026-10-11T06:19:13.944646-04:00"
+        }
+      },
+      "metadataAfter": {
+        "errors": [],
+        "installed": {
+          "name": "qwen2.5:1.5b-instruct-q4_K_M",
+          "digest": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+          "size": 986061892,
+          "details": {
+            "parameter_size": "1.5B",
+            "quantization_level": "Q4_K_M"
+          }
+        },
+        "show": {
+          "details": {
+            "parameter_size": "1.5B",
+            "quantization_level": "Q4_K_M"
+          },
+          "model_info": {
+            "general.architecture": "qwen2",
+            "general.base_model.0.name": "Qwen2.5 1.5B",
+            "general.base_model.0.organization": "Qwen",
+            "general.base_model.0.repo_url": "https://huggingface.co/Qwen/Qwen2.5-1.5B",
+            "general.base_model.count": 1,
+            "general.basename": "Qwen2.5",
+            "general.file_type": 15,
+            "general.finetune": "Instruct",
+            "general.languages": [
+              "en"
+            ],
+            "general.license": "apache-2.0",
+            "general.license.link": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct/blob/main/LICENSE",
+            "general.parameter_count": 1543714304,
+            "general.quantization_version": 2,
+            "general.size_label": "1.5B",
+            "general.tags": [
+              "chat",
+              "text-generation"
+            ],
+            "general.type": "model",
+            "qwen2.attention.head_count": 12,
+            "qwen2.attention.head_count_kv": 2,
+            "qwen2.attention.layer_norm_rms_epsilon": 0.000001,
+            "qwen2.block_count": 28,
+            "qwen2.context_length": 32768,
+            "qwen2.embedding_length": 1536,
+            "qwen2.feed_forward_length": 8960,
+            "qwen2.rope.freq_base": 1000000,
+            "tokenizer.ggml.add_bos_token": false,
+            "tokenizer.ggml.bos_token_id": 151643,
+            "tokenizer.ggml.eos_token_id": 151645,
+            "tokenizer.ggml.merges": [],
+            "tokenizer.ggml.model": "gpt2",
+            "tokenizer.ggml.padding_token_id": 151643,
+            "tokenizer.ggml.pre": "qwen2",
+            "tokenizer.ggml.token_type": [],
+            "tokenizer.ggml.tokens": []
+          }
+        },
+        "loaded": {
+          "name": "qwen2.5:1.5b-instruct-q4_K_M",
+          "digest": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+          "size": 1102263090,
+          "size_vram": 1102263090,
+          "expires_at": "2026-10-11T06:20:07.016423-04:00"
+        }
+      },
+      "samples": [
+        {
+          "kind": "accepted",
+          "phase": "first-request",
+          "caseId": "melancholy",
+          "seed": 4240,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7"
+          ],
+          "metrics": {
+            "wallMs": 258.02579200000037,
+            "loadMs": 1.6405,
+            "promptTokens": 201,
+            "outputTokens": 39,
+            "generationMs": 187.369
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.800; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "discarded-warmup",
+          "caseId": "melancholy",
+          "seed": 4241,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dmaj7",
+            "Em7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 260.1440419999999,
+            "loadMs": 1.981458,
+            "promptTokens": 201,
+            "outputTokens": 51,
+            "generationMs": 243.337
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.714; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "melancholy",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Am7",
+            "Gmaj7",
+            "Dmaj7"
+          ],
+          "metrics": {
+            "wallMs": 207.16575000000012,
+            "loadMs": 1.640708,
+            "promptTokens": 201,
+            "outputTokens": 40,
+            "generationMs": 190.561
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.600; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "melancholy",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dm7",
+            "Em7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 262.56454099999974,
+            "loadMs": 1.872916,
+            "promptTokens": 201,
+            "outputTokens": 51,
+            "generationMs": 244.524
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.714; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "melancholy",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Am7",
+            "Gmaj7",
+            "Dmaj7"
+          ],
+          "metrics": {
+            "wallMs": 208.63183299999946,
+            "loadMs": 1.663875,
+            "promptTokens": 201,
+            "outputTokens": 40,
+            "generationMs": 191.468
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.600; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "dark",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Am7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 228.2983750000003,
+            "loadMs": 1.8475,
+            "promptTokens": 199,
+            "outputTokens": 34,
+            "generationMs": 164.2
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "dark",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7",
+            "Gmaj7",
+            "Cmaj7",
+            "Fmaj7"
+          ],
+          "metrics": {
+            "wallMs": 285.89370899999994,
+            "loadMs": 1.854834,
+            "promptTokens": 199,
+            "outputTokens": 57,
+            "generationMs": 268.803
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "dark",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7",
+            "Em7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 243.5649999999987,
+            "loadMs": 1.706458,
+            "promptTokens": 199,
+            "outputTokens": 49,
+            "generationMs": 227.376
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.714; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "joyful",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Am7",
+            "Gmaj7",
+            "Dmaj7"
+          ],
+          "metrics": {
+            "wallMs": 258.95600000000013,
+            "loadMs": 1.752959,
+            "promptTokens": 200,
+            "outputTokens": 40,
+            "generationMs": 194.458
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.600; requires >=0.75.",
+              "major-opening: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "joyful",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Gmaj7",
+            "Am7",
+            "Fmaj7",
+            "Em7",
+            "Dmaj7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 277.7151250000006,
+            "loadMs": 2.010208,
+            "promptTokens": 200,
+            "outputTokens": 51,
+            "generationMs": 259.351
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.714; requires >=0.75.",
+              "major-opening: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "joyful",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Am7",
+            "Gmaj7",
+            "Dmaj7"
+          ],
+          "metrics": {
+            "wallMs": 210.6194579999992,
+            "loadMs": 1.781167,
+            "promptTokens": 200,
+            "outputTokens": 40,
+            "generationMs": 193.642
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.600; requires >=0.75.",
+              "major-opening: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "hopeful",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Am7",
+            "Gmaj7",
+            "Dmaj7",
+            "Em7",
+            "Am7",
+            "Dmaj7"
+          ],
+          "metrics": {
+            "wallMs": 338.94225000000006,
+            "loadMs": 1.635708,
+            "promptTokens": 200,
+            "outputTokens": 56,
+            "generationMs": 273.625
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "major-opening: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "hopeful",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7",
+            "Gmaj7",
+            "Cmaj7",
+            "Fmaj7"
+          ],
+          "metrics": {
+            "wallMs": 297.7205419999991,
+            "loadMs": 1.98725,
+            "promptTokens": 200,
+            "outputTokens": 57,
+            "generationMs": 279.512
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "hopeful",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Am7",
+            "Gmaj7",
+            "Dmaj7",
+            "Em7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 268.78941699999996,
+            "loadMs": 2.014333,
+            "promptTokens": 200,
+            "outputTokens": 51,
+            "generationMs": 250.701
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.714; requires >=0.75.",
+              "major-opening: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "blues",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 286.30466700000034,
+            "loadMs": 1.993083,
+            "promptTokens": 198,
+            "outputTokens": 45,
+            "generationMs": 220.139
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "blues",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7",
+            "Gmaj7",
+            "Cmaj7",
+            "Fmaj7"
+          ],
+          "metrics": {
+            "wallMs": 294.1813750000001,
+            "loadMs": 2.085333,
+            "promptTokens": 198,
+            "outputTokens": 57,
+            "generationMs": 275.941
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "blues",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7",
+            "Em7",
+            "A7"
+          ],
+          "metrics": {
+            "wallMs": 248.6812090000003,
+            "loadMs": 1.809833,
+            "promptTokens": 198,
+            "outputTokens": 49,
+            "generationMs": 232.002
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "jazz",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dmaj7",
+            "Em7",
+            "Am7",
+            "Dmaj7"
+          ],
+          "metrics": {
+            "wallMs": 340.15583400000105,
+            "loadMs": 1.746375,
+            "promptTokens": 198,
+            "outputTokens": 56,
+            "generationMs": 275.925
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "jazz",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dm7",
+            "Em7",
+            "Gmaj7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 295.20074999999997,
+            "loadMs": 1.999292,
+            "promptTokens": 198,
+            "outputTokens": 57,
+            "generationMs": 276.448
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "jazz",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dm7",
+            "Em7"
+          ],
+          "metrics": {
+            "wallMs": 231.9377089999998,
+            "loadMs": 1.823833,
+            "promptTokens": 198,
+            "outputTokens": 45,
+            "generationMs": 214.601
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.833; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "neo-soul",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dm7",
+            "Em7"
+          ],
+          "metrics": {
+            "wallMs": 283.7069159999992,
+            "loadMs": 1.798583,
+            "promptTokens": 200,
+            "outputTokens": 45,
+            "generationMs": 218.041
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.833; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "neo-soul",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dm7",
+            "Em7",
+            "Gmaj7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 292.5777079999989,
+            "loadMs": 1.848125,
+            "promptTokens": 200,
+            "outputTokens": 57,
+            "generationMs": 275.434
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "neo-soul",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dm7",
+            "Em7"
+          ],
+          "metrics": {
+            "wallMs": 232.04108300000007,
+            "loadMs": 1.714416,
+            "promptTokens": 200,
+            "outputTokens": 45,
+            "generationMs": 215.337
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.833; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "folk",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dm7",
+            "Em7"
+          ],
+          "metrics": {
+            "wallMs": 280.42612499999996,
+            "loadMs": 1.665042,
+            "promptTokens": 198,
+            "outputTokens": 45,
+            "generationMs": 214.607
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.833; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "folk",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dm7",
+            "Em7",
+            "Gmaj7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 291.5762089999989,
+            "loadMs": 1.7605,
+            "promptTokens": 198,
+            "outputTokens": 57,
+            "generationMs": 274.378
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "folk",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dm7",
+            "Em7"
+          ],
+          "metrics": {
+            "wallMs": 234.09749999999985,
+            "loadMs": 3.225916,
+            "promptTokens": 198,
+            "outputTokens": 45,
+            "generationMs": 215.02
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.833; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "pop",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dmaj7",
+            "Em7",
+            "Am7",
+            "Dmaj7"
+          ],
+          "metrics": {
+            "wallMs": 341.19416700000147,
+            "loadMs": 1.839458,
+            "promptTokens": 198,
+            "outputTokens": 56,
+            "generationMs": 275.261
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "pop",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dm7",
+            "Em7",
+            "Gmaj7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 287.255208999999,
+            "loadMs": 1.8945,
+            "promptTokens": 198,
+            "outputTokens": 57,
+            "generationMs": 269.774
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "pop",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dm7",
+            "Em7"
+          ],
+          "metrics": {
+            "wallMs": 233.98166700000002,
+            "loadMs": 1.721792,
+            "promptTokens": 198,
+            "outputTokens": 45,
+            "generationMs": 217.753
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.833; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "era-setting",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 284.35629100000006,
+            "loadMs": 2.044625,
+            "promptTokens": 211,
+            "outputTokens": 45,
+            "generationMs": 219.246
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.833; requires >=0.75.",
+              "No additional vibe claim for these vague settings/eras/energies."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "era-setting",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7",
+            "Gmaj7",
+            "Cmaj7",
+            "Fmaj7"
+          ],
+          "metrics": {
+            "wallMs": 301.60266599999886,
+            "loadMs": 1.937334,
+            "promptTokens": 211,
+            "outputTokens": 57,
+            "generationMs": 283.56
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "No additional vibe claim for these vague settings/eras/energies."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "era-setting",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dmaj7",
+            "Em7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 267.3140420000018,
+            "loadMs": 2.1735,
+            "promptTokens": 211,
+            "outputTokens": 51,
+            "generationMs": 247.681
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.714; requires >=0.75.",
+              "No additional vibe claim for these vague settings/eras/energies."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-dark-folk",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Dm7",
+            "Am7",
+            "Em7"
+          ],
+          "metrics": {
+            "wallMs": 284.6892079999998,
+            "loadMs": 2.299833,
+            "promptTokens": 220,
+            "outputTokens": 45,
+            "generationMs": 217.983
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.833; requires >=0.75.",
+              "minor: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-dark-folk",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dm7",
+            "Em7",
+            "Gmaj7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 297.10841699999946,
+            "loadMs": 1.955917,
+            "promptTokens": 220,
+            "outputTokens": 57,
+            "generationMs": 278.531
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "minor: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-dark-folk",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dm7",
+            "Gmaj7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 272.37062499999956,
+            "loadMs": 1.801958,
+            "promptTokens": 220,
+            "outputTokens": 52,
+            "generationMs": 254.66
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.714; requires >=0.75.",
+              "minor: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-joyful-pop",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dmaj7",
+            "Em7",
+            "Fmaj7"
+          ],
+          "metrics": {
+            "wallMs": 282.6524580000005,
+            "loadMs": 1.939167,
+            "promptTokens": 224,
+            "outputTokens": 45,
+            "generationMs": 216.288
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.667; requires >=0.75.",
+              "major-opening: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-joyful-pop",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Gmaj7",
+            "Am7",
+            "Fmaj7",
+            "Em7",
+            "Dmaj7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 268.9601250000014,
+            "loadMs": 1.67125,
+            "promptTokens": 224,
+            "outputTokens": 51,
+            "generationMs": 250.894
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.714; requires >=0.75.",
+              "major-opening: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-joyful-pop",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Gmaj7",
+            "Am7",
+            "Dmaj7",
+            "Em7",
+            "Am7"
+          ],
+          "metrics": {
+            "wallMs": 230.40458299999955,
+            "loadMs": 1.61525,
+            "promptTokens": 224,
+            "outputTokens": 44,
+            "generationMs": 212.313
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.833; requires >=0.75.",
+              "major-opening: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-melancholy-jazz",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 287.7018750000025,
+            "loadMs": 1.829208,
+            "promptTokens": 216,
+            "outputTokens": 45,
+            "generationMs": 217.533
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.833; requires >=0.75.",
+              "minor: true.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-melancholy-jazz",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7",
+            "Gmaj7",
+            "Cmaj7",
+            "Fmaj7"
+          ],
+          "metrics": {
+            "wallMs": 284.0094170000011,
+            "loadMs": 1.807583,
+            "promptTokens": 216,
+            "outputTokens": 57,
+            "generationMs": 266.017
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "minor: true.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-melancholy-jazz",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7",
+            "Em7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 264.75787499999933,
+            "loadMs": 2.132292,
+            "promptTokens": 216,
+            "outputTokens": 50,
+            "generationMs": 246.563
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.857; requires >=0.75.",
+              "minor: true.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-blues",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7",
+            "Em7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 282.1690419999977,
+            "loadMs": 1.767625,
+            "promptTokens": 214,
+            "outputTokens": 44,
+            "generationMs": 217.207
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-blues",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Fmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7",
+            "Gmaj7",
+            "Cmaj7",
+            "Fmaj7"
+          ],
+          "metrics": {
+            "wallMs": 299.11029100000087,
+            "loadMs": 1.987333,
+            "promptTokens": 214,
+            "outputTokens": 57,
+            "generationMs": 280.332
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-blues",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Gmaj7",
+            "Am7",
+            "D7",
+            "Em7",
+            "Fmaj7"
+          ],
+          "metrics": {
+            "wallMs": 231.97845799999777,
+            "loadMs": 1.9105,
+            "promptTokens": 214,
+            "outputTokens": 44,
+            "generationMs": 213.667
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        }
+      ],
+      "summary": {
+        "model": "qwen2.5:1.5b-instruct-q4_K_M",
+        "loadedBytes": 1102263090,
+        "sampleCount": 42,
+        "failureCount": 0,
+        "validRate": 1,
+        "proxyPassRate": 0.30952380952380953,
+        "distinctProgressions": 20,
+        "passes": false,
+        "p50WarmWallMs": 280.42612499999996,
+        "p95WarmWallMs": 338.94225000000006,
+        "maximumLoadMs": 3.225916
+      }
+    },
+    {
+      "model": "qwen3:4b-q4_K_M",
+      "metadataBefore": {
+        "errors": [],
+        "installed": {
+          "name": "qwen3:4b-q4_K_M",
+          "digest": "2bfd38a7daaf4b1037efe517ccb73d1a3bbd4822cf89f1a82be1569050a114e0",
+          "size": 2620788260,
+          "details": {
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          }
+        },
+        "show": {
+          "details": {
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "model_info": {
+            "general.architecture": "qwen3",
+            "general.basename": "Qwen3",
+            "general.file_type": 15,
+            "general.parameter_count": 4022468096,
+            "general.quantization_version": 2,
+            "general.size_label": "4B",
+            "general.type": "model",
+            "qwen3.attention.head_count": 32,
+            "qwen3.attention.head_count_kv": 8,
+            "qwen3.attention.key_length": 128,
+            "qwen3.attention.layer_norm_rms_epsilon": 0.000001,
+            "qwen3.attention.value_length": 128,
+            "qwen3.block_count": 36,
+            "qwen3.context_length": 40960,
+            "qwen3.embedding_length": 2560,
+            "qwen3.feed_forward_length": 9728,
+            "qwen3.rope.freq_base": 1000000,
+            "tokenizer.ggml.add_bos_token": false,
+            "tokenizer.ggml.bos_token_id": 151643,
+            "tokenizer.ggml.eos_token_id": 151645,
+            "tokenizer.ggml.merges": [],
+            "tokenizer.ggml.model": "gpt2",
+            "tokenizer.ggml.padding_token_id": 151643,
+            "tokenizer.ggml.pre": "qwen2",
+            "tokenizer.ggml.token_type": [],
+            "tokenizer.ggml.tokens": []
+          }
+        },
+        "loaded": {
+          "name": "qwen3:4b-q4_K_M",
+          "digest": "2bfd38a7daaf4b1037efe517ccb73d1a3bbd4822cf89f1a82be1569050a114e0",
+          "size": 2989175602,
+          "size_vram": 2989175602,
+          "expires_at": "2026-10-11T06:18:03.208078-04:00"
+        }
+      },
+      "metadataAfter": {
+        "errors": [],
+        "installed": {
+          "name": "qwen3:4b-q4_K_M",
+          "digest": "2bfd38a7daaf4b1037efe517ccb73d1a3bbd4822cf89f1a82be1569050a114e0",
+          "size": 2620788260,
+          "details": {
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          }
+        },
+        "show": {
+          "details": {
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "model_info": {
+            "general.architecture": "qwen3",
+            "general.basename": "Qwen3",
+            "general.file_type": 15,
+            "general.parameter_count": 4022468096,
+            "general.quantization_version": 2,
+            "general.size_label": "4B",
+            "general.type": "model",
+            "qwen3.attention.head_count": 32,
+            "qwen3.attention.head_count_kv": 8,
+            "qwen3.attention.key_length": 128,
+            "qwen3.attention.layer_norm_rms_epsilon": 0.000001,
+            "qwen3.attention.value_length": 128,
+            "qwen3.block_count": 36,
+            "qwen3.context_length": 40960,
+            "qwen3.embedding_length": 2560,
+            "qwen3.feed_forward_length": 9728,
+            "qwen3.rope.freq_base": 1000000,
+            "tokenizer.ggml.add_bos_token": false,
+            "tokenizer.ggml.bos_token_id": 151643,
+            "tokenizer.ggml.eos_token_id": 151645,
+            "tokenizer.ggml.merges": [],
+            "tokenizer.ggml.model": "gpt2",
+            "tokenizer.ggml.padding_token_id": 151643,
+            "tokenizer.ggml.pre": "qwen2",
+            "tokenizer.ggml.token_type": [],
+            "tokenizer.ggml.tokens": []
+          }
+        },
+        "loaded": {
+          "name": "qwen3:4b-q4_K_M",
+          "digest": "2bfd38a7daaf4b1037efe517ccb73d1a3bbd4822cf89f1a82be1569050a114e0",
+          "size": 2989175602,
+          "size_vram": 2989175602,
+          "expires_at": "2026-10-11T06:20:34.550806-04:00"
+        }
+      },
+      "samples": [
+        {
+          "kind": "accepted",
+          "phase": "first-request",
+          "caseId": "melancholy",
+          "seed": 4240,
+          "chords": [
+            "Am7",
+            "Em7",
+            "Cm7",
+            "F7",
+            "Gm7",
+            "Bm7",
+            "Em7",
+            "Am7"
+          ],
+          "metrics": {
+            "wallMs": 711.3947919999991,
+            "loadMs": 1.798708,
+            "promptTokens": 188,
+            "outputTokens": 55,
+            "generationMs": 545.922
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "discarded-warmup",
+          "caseId": "melancholy",
+          "seed": 4241,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "A7",
+            "Em7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 574.0469999999987,
+            "loadMs": 1.962917,
+            "promptTokens": 188,
+            "outputTokens": 55,
+            "generationMs": 552.012
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "melancholy",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "A7",
+            "Em7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 573.3993750000009,
+            "loadMs": 2.000209,
+            "promptTokens": 188,
+            "outputTokens": 55,
+            "generationMs": 551.517
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "melancholy",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "Em7",
+            "Cm7",
+            "F7",
+            "Gm7",
+            "Bm7",
+            "Em7",
+            "Am7"
+          ],
+          "metrics": {
+            "wallMs": 573.5959580000017,
+            "loadMs": 1.820959,
+            "promptTokens": 188,
+            "outputTokens": 55,
+            "generationMs": 552.256
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "melancholy",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "A7",
+            "Em7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 575.9441669999978,
+            "loadMs": 1.882958,
+            "promptTokens": 188,
+            "outputTokens": 55,
+            "generationMs": 553.673
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "dark",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Em7",
+            "Cm7",
+            "F7",
+            "Gm7",
+            "Bm7",
+            "Em7",
+            "Am7"
+          ],
+          "metrics": {
+            "wallMs": 718.4645840000012,
+            "loadMs": 1.940084,
+            "promptTokens": 186,
+            "outputTokens": 55,
+            "generationMs": 552.174
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "dark",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "A7",
+            "Em7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 575.8045410000013,
+            "loadMs": 2.181167,
+            "promptTokens": 186,
+            "outputTokens": 55,
+            "generationMs": 553.005
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "dark",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "A7",
+            "Em7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 574.5771669999995,
+            "loadMs": 1.920958,
+            "promptTokens": 186,
+            "outputTokens": 55,
+            "generationMs": 552.304
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "minor: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "joyful",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 727.2932920000021,
+            "loadMs": 2.027667,
+            "promptTokens": 187,
+            "outputTokens": 56,
+            "generationMs": 561.084
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "joyful",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 585.3821670000034,
+            "loadMs": 2.542958,
+            "promptTokens": 187,
+            "outputTokens": 56,
+            "generationMs": 562.38
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "joyful",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 584.1020840000019,
+            "loadMs": 2.070125,
+            "promptTokens": 187,
+            "outputTokens": 56,
+            "generationMs": 561.985
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "hopeful",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 725.2160000000003,
+            "loadMs": 1.976,
+            "promptTokens": 187,
+            "outputTokens": 56,
+            "generationMs": 561.267
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "hopeful",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 582.4217910000007,
+            "loadMs": 1.99375,
+            "promptTokens": 187,
+            "outputTokens": 56,
+            "generationMs": 560.647
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "hopeful",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 584.757458,
+            "loadMs": 3.146166,
+            "promptTokens": 187,
+            "outputTokens": 56,
+            "generationMs": 561.238
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "blues",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "D7",
+            "G7",
+            "C7",
+            "F7",
+            "Bm7",
+            "E7",
+            "Am7"
+          ],
+          "metrics": {
+            "wallMs": 776.687167,
+            "loadMs": 1.959875,
+            "promptTokens": 185,
+            "outputTokens": 53,
+            "generationMs": 540.363
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "blues",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "D7",
+            "G7",
+            "C7",
+            "F7",
+            "Bm7",
+            "E7",
+            "Am7"
+          ],
+          "metrics": {
+            "wallMs": 563.5082920000023,
+            "loadMs": 1.958125,
+            "promptTokens": 185,
+            "outputTokens": 53,
+            "generationMs": 540.733
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "blues",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "D7",
+            "G7",
+            "C7",
+            "F7",
+            "Bm7",
+            "E7",
+            "Am7"
+          ],
+          "metrics": {
+            "wallMs": 552.9821669999983,
+            "loadMs": 1.83,
+            "promptTokens": 185,
+            "outputTokens": 53,
+            "generationMs": 530.668
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "jazz",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "G7",
+            "Cm7",
+            "F7"
+          ],
+          "metrics": {
+            "wallMs": 698.1430419999997,
+            "loadMs": 1.855875,
+            "promptTokens": 185,
+            "outputTokens": 55,
+            "generationMs": 536.249
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "jazz",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "G7",
+            "Cm7",
+            "F7"
+          ],
+          "metrics": {
+            "wallMs": 570.9674579999992,
+            "loadMs": 2.023958,
+            "promptTokens": 185,
+            "outputTokens": 55,
+            "generationMs": 548.981
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "jazz",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "G7",
+            "Cm7",
+            "F7"
+          ],
+          "metrics": {
+            "wallMs": 571.8789169999945,
+            "loadMs": 1.986708,
+            "promptTokens": 185,
+            "outputTokens": 55,
+            "generationMs": 549.804
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "neo-soul",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "A7",
+            "E7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 716.1125000000029,
+            "loadMs": 1.911083,
+            "promptTokens": 187,
+            "outputTokens": 55,
+            "generationMs": 550.344
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.375; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "neo-soul",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "A7",
+            "E7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 572.5209590000013,
+            "loadMs": 1.972333,
+            "promptTokens": 187,
+            "outputTokens": 55,
+            "generationMs": 550.39
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.375; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "neo-soul",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "A7",
+            "E7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 573.8472079999992,
+            "loadMs": 3.25725,
+            "promptTokens": 187,
+            "outputTokens": 55,
+            "generationMs": 549.689
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.375; requires >=0.75.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "folk",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cmaj7",
+            "G7",
+            "Dm7",
+            "Am7",
+            "F7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 716.580458000004,
+            "loadMs": 1.90275,
+            "promptTokens": 185,
+            "outputTokens": 55,
+            "generationMs": 550.319
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "folk",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "Cmaj7",
+            "Gmaj7",
+            "Dm7",
+            "Am7",
+            "Em7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 592.0173750000031,
+            "loadMs": 2.11975,
+            "promptTokens": 185,
+            "outputTokens": 57,
+            "generationMs": 569.196
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "folk",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cmaj7",
+            "Gm7",
+            "D7",
+            "Am7",
+            "F7",
+            "Cmaj7"
+          ],
+          "metrics": {
+            "wallMs": 572.0179169999974,
+            "loadMs": 2.053958,
+            "promptTokens": 185,
+            "outputTokens": 55,
+            "generationMs": 549.692
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "pop",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 730.0657080000019,
+            "loadMs": 2.181541,
+            "promptTokens": 185,
+            "outputTokens": 56,
+            "generationMs": 562.514
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "pop",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 582.5745000000024,
+            "loadMs": 2.104958,
+            "promptTokens": 185,
+            "outputTokens": 56,
+            "generationMs": 559.366
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "pop",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 581.4856249999939,
+            "loadMs": 2.124416,
+            "promptTokens": 185,
+            "outputTokens": 56,
+            "generationMs": 559.398
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "era-setting",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 723.5642079999961,
+            "loadMs": 1.958458,
+            "promptTokens": 198,
+            "outputTokens": 56,
+            "generationMs": 557.56
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "No additional vibe claim for these vague settings/eras/energies."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "era-setting",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 580.0147499999948,
+            "loadMs": 2.125875,
+            "promptTokens": 198,
+            "outputTokens": 56,
+            "generationMs": 555.824
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "No additional vibe claim for these vague settings/eras/energies."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "era-setting",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "F7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 580.2109160000036,
+            "loadMs": 2.117,
+            "promptTokens": 198,
+            "outputTokens": 56,
+            "generationMs": 557.534
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "No additional vibe claim for these vague settings/eras/energies."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-dark-folk",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "Cm7",
+            "Gmaj7",
+            "Dm7",
+            "Am7",
+            "Em7",
+            "Bm7"
+          ],
+          "metrics": {
+            "wallMs": 741.8082919999943,
+            "loadMs": 2.502541,
+            "promptTokens": 207,
+            "outputTokens": 57,
+            "generationMs": 572.254
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "minor: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-dark-folk",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "Am7",
+            "Fmaj7",
+            "Cm7"
+          ],
+          "metrics": {
+            "wallMs": 578.4875840000022,
+            "loadMs": 1.824292,
+            "promptTokens": 207,
+            "outputTokens": 57,
+            "generationMs": 561.828
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "minor: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-dark-folk",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "Fmaj7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "Am7",
+            "Fmaj7",
+            "Cm7"
+          ],
+          "metrics": {
+            "wallMs": 595.8251249999958,
+            "loadMs": 1.988833,
+            "promptTokens": 207,
+            "outputTokens": 57,
+            "generationMs": 571.722
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "minor: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-joyful-pop",
+          "seed": 4242,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "Fmaj7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "Fmaj7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 745.1820420000004,
+            "loadMs": 2.037834,
+            "promptTokens": 211,
+            "outputTokens": 58,
+            "generationMs": 579.741
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-joyful-pop",
+          "seed": 4243,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "Fmaj7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "Fmaj7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 598.8795420000024,
+            "loadMs": 2.0605,
+            "promptTokens": 211,
+            "outputTokens": 58,
+            "generationMs": 582.215
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-joyful-pop",
+          "seed": 4244,
+          "chords": [
+            "Cmaj7",
+            "Am7",
+            "Fmaj7",
+            "Gmaj7",
+            "Cmaj7",
+            "Am7",
+            "Fmaj7",
+            "Gmaj7"
+          ],
+          "metrics": {
+            "wallMs": 603.7720839999965,
+            "loadMs": 2.108333,
+            "promptTokens": 211,
+            "outputTokens": 58,
+            "generationMs": 586.838
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.750; requires >=0.75.",
+              "major-opening: true.",
+              "triads: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-melancholy-jazz",
+          "seed": 4242,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "Am7",
+            "E7",
+            "Am7"
+          ],
+          "metrics": {
+            "wallMs": 713.8107920000039,
+            "loadMs": 2.244709,
+            "promptTokens": 203,
+            "outputTokens": 54,
+            "generationMs": 543.51
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "minor: true.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-melancholy-jazz",
+          "seed": 4243,
+          "chords": [
+            "Am7",
+            "Dm7",
+            "Gm7",
+            "Cm7",
+            "F7",
+            "Bm7",
+            "Em7",
+            "Am7"
+          ],
+          "metrics": {
+            "wallMs": 591.6962500000009,
+            "loadMs": 2.501792,
+            "promptTokens": 203,
+            "outputTokens": 56,
+            "generationMs": 575.518
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.500; requires >=0.75.",
+              "minor: true.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-melancholy-jazz",
+          "seed": 4244,
+          "chords": [
+            "Am7",
+            "F7",
+            "Cm7",
+            "G7",
+            "Dm7",
+            "Am7",
+            "F7",
+            "Cm7"
+          ],
+          "metrics": {
+            "wallMs": 572.1368749999965,
+            "loadMs": 1.995917,
+            "promptTokens": 203,
+            "outputTokens": 55,
+            "generationMs": 555.541
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Common major/natural-minor scale chord share: 0.625; requires >=0.75.",
+              "minor: true.",
+              "seventh: true."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-blues",
+          "seed": 4242,
+          "chords": [
+            "Em7",
+            "B7",
+            "Cmaj7",
+            "F7",
+            "G7",
+            "Am7",
+            "D7",
+            "Em7"
+          ],
+          "metrics": {
+            "wallMs": 728.0483749999985,
+            "loadMs": 2.0345,
+            "promptTokens": 201,
+            "outputTokens": 53,
+            "generationMs": 548.593
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-blues",
+          "seed": 4243,
+          "chords": [
+            "Em7",
+            "Bm7",
+            "C7",
+            "F7",
+            "G7",
+            "Am7",
+            "D7",
+            "Em7"
+          ],
+          "metrics": {
+            "wallMs": 565.9343749999971,
+            "loadMs": 2.008792,
+            "promptTokens": 201,
+            "outputTokens": 53,
+            "generationMs": 540.857
+          },
+          "score": {
+            "valid": true,
+            "coherent": false,
+            "proxyPass": false,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: false.",
+              "blues: false."
+            ]
+          }
+        },
+        {
+          "kind": "accepted",
+          "phase": "scored",
+          "caseId": "holdout-blues",
+          "seed": 4244,
+          "chords": [
+            "C7",
+            "F7",
+            "G7",
+            "C7",
+            "F7",
+            "G7",
+            "C7",
+            "F7"
+          ],
+          "metrics": {
+            "wallMs": 555.3865409999999,
+            "loadMs": 2.014083,
+            "promptTokens": 201,
+            "outputTokens": 52,
+            "generationMs": 531.202
+          },
+          "score": {
+            "valid": true,
+            "coherent": true,
+            "proxyPass": true,
+            "reasons": [
+              "Blues I-IV-V dominant relationship: true.",
+              "blues: true."
+            ]
+          }
+        }
+      ],
+      "summary": {
+        "model": "qwen3:4b-q4_K_M",
+        "loadedBytes": 2989175602,
+        "sampleCount": 42,
+        "failureCount": 0,
+        "validRate": 1,
+        "proxyPassRate": 0.23809523809523808,
+        "distinctProgressions": 18,
+        "passes": false,
+        "p50WarmWallMs": 582.5745000000024,
+        "p95WarmWallMs": 741.8082919999943,
+        "maximumLoadMs": 3.25725
+      }
+    }
+  ],
+  "winner": null,
+  "ollama": {
+    "version": "0.40.2",
+    "provenance": "Recorded from the benchmark run ledger after capture."
+  },
+  "prompt": {
+    "templateSha256": "ed4c3141cfc6e86fc7859d09b8d828aeab9b12989e761b8f33c4b762e0de2e97",
+    "provenance": "Same tuned-prompt capture as prompt-tuned-iteration1.json; fingerprint attached after capture."
+  }
+}

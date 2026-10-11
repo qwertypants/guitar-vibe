@@ -1,78 +1,36 @@
 import "server-only";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { generateText, Output } from "ai";
 import { NextResponse } from "next/server";
-import {
-  getVibeLabels,
-  progressionRequestSchema,
-  progressionSchema,
-  resolveProgression,
-} from "@/lib/progression";
+import { progressionRequestSchema, resolveProgression } from "@/lib/progression";
+import { generateLocalProgression, LocalModelError, type LocalModelErrorCode } from "@/lib/server/local-model";
 
 export const runtime = "nodejs";
 
-function safeErrorDetails(cause: unknown) {
-  if (!(cause instanceof Error)) return { type: typeof cause };
-
-  const candidate = cause as Error & { code?: unknown; statusCode?: unknown };
-  const message = cause.message
-    .replace(/\bsk-or-v1-[\w-]+/gi, "[redacted]")
-    .replace(/\bsk-[\w-]+/gi, "[redacted]")
-    .replace(/\bBearer\s+\S+/gi, "Bearer [redacted]")
-    .replace(/(OPENROUTER_API_KEY\s*[:=]\s*)\S+/gi, "$1[redacted]")
-    .slice(0, 400);
-
-  return {
-    name: cause.name,
-    message,
-    ...(typeof candidate.statusCode === "number" ? { statusCode: candidate.statusCode } : {}),
-    ...(typeof candidate.code === "string" ? { code: candidate.code } : {}),
-  };
-}
+const errors = {
+  invalid_input: { status: 400, error: "Please choose between one and five available vibe options, one per category." },
+  configuration: { status: 503, error: "The local chord generator needs a valid local configuration." },
+  unavailable: { status: 503, error: "The local chord generator is unavailable. Please check Ollama and try again." },
+  timeout: { status: 504, error: "The local chord generator took too long. Please try again." },
+  invalid_output: { status: 502, error: "The local chord generator returned an invalid progression. Please try again." },
+} satisfies Record<LocalModelErrorCode, { status: number; error: string }>;
 
 export async function POST(request: Request) {
   let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  try { body = await request.json(); } catch {
     return NextResponse.json({ error: "Please choose a few vibe options and try again." }, { status: 400 });
   }
-
   const parsedRequest = progressionRequestSchema.safeParse(body);
   if (!parsedRequest.success) {
-    return NextResponse.json({ error: "Please choose between one and five vibe options." }, { status: 400 });
+    return NextResponse.json({ error: errors.invalid_input.error }, { status: 400 });
   }
-  const vibeLabels = getVibeLabels(parsedRequest.data.vibeIds);
-  if (!vibeLabels) {
-    return NextResponse.json({ error: "One or more selected vibe options are unavailable." }, { status: 400 });
-  }
-
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "Add OPENROUTER_API_KEY to .env.local to generate progressions." }, { status: 503 });
-  }
-
   try {
-    const openrouter = createOpenRouter({ apiKey });
-    const model = process.env.OPENROUTER_MODEL || "openai/gpt-6-luna";
-    const { output } = await generateText({
-      model: openrouter(model),
-      output: Output.object({ schema: progressionSchema }),
-      maxRetries: 0,
-      prompt: [
-        "Create a playable guitar chord progression inspired by these selected vibes.",
-        ...vibeLabels,
-        "Return 3 to 8 chord symbols using only these supported forms: root note A-G with optional # or b, followed by nothing, m, 7, maj7, or m7.",
-        "Prefer coherent voice-leading and approachable guitar harmony. Return chord symbols only in the required structured output.",
-      ].join("\n"),
-    });
+    const output = await generateLocalProgression(parsedRequest.data.vibeIds, { signal: request.signal });
     const chords = resolveProgression(output.chords);
-    if (!chords) {
-      return NextResponse.json({ error: "That progression used an unsupported chord. Please generate another." }, { status: 502 });
-    }
+    if (!chords) throw new LocalModelError("invalid_output");
     return NextResponse.json({ chords });
   } catch (cause) {
-    console.error("[progression] OpenRouter generation failed", safeErrorDetails(cause));
-    return NextResponse.json({ error: "We couldn't reach the chord generator. Please try again." }, { status: 502 });
+    const code = cause instanceof LocalModelError ? cause.code : "unavailable";
+    console.error("[progression] local generation failed", { code });
+    const { error, status } = errors[code];
+    return NextResponse.json({ error }, { status });
   }
 }
