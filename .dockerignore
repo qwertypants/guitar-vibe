@@ -1,0 +1,26 @@
+# Allow only app inputs. Secrets, worktrees, caches and scratch never enter the context.
+**
+!package.json
+!package-lock.json
+!next.config.ts
+!tsconfig.json
+!postcss.config.mjs
+!app/
+!app/**
+!components/
+!components/**
+!lib/
+!lib/**
+!types/
+!types/**
+!public/
+!public/**
+**/.env*
+**/*.pem
+**/.DS_Store
+**/.git
+**/node_modules
+**/.worktrees
+**/.next
+**/.superpowers
+**/evals/output

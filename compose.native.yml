@@ -1,0 +1,11 @@
+# Docker Compose 2.24.4+ supports !reset. This mode never starts container Ollama.
+services:
+  app:
+    environment:
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    depends_on: !reset {}
+  ollama:
+    profiles: [container]
+  model-prepare:
+    environment:
+      OLLAMA_BASE_URL: http://host.docker.internal:11434

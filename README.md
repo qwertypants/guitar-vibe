@@ -1,75 +1,192 @@
 # Vibe Chords
 
-A free, non-commercial guitar chord progression app. This baseline provides
-the Next.js App Router, strict TypeScript, Tailwind CSS, and test tooling.
-Product requirements are in [the spec](docs/vibe-chords-spec.md).
+A free, non-commercial guitar chord progression app built with Next.js, strict
+TypeScript, Tailwind CSS and local Ollama inference. The browser submits catalog
+vibe IDs; the server asks for chord symbols and resolves them against supported
+local guitar voicings. No hosted provider or API key is required.
 
-## Local development
+## Local development with Tilt
 
-Use Node.js 22.22.2 or a compatible version listed in `package.json`. The
-`.nvmrc` pins the supported Node 22 version. Install the locked dependencies:
+Prerequisites are Tilt, Docker with Docker Compose 2.24.4 or newer, and a running
+Docker daemon. The images pin Node.js 22.22.2 and Ollama 0.40.2. The first image
+build installs the locked npm dependencies. This can require internet access.
+Tilt does not install system tools.
+
+On this Mac, the default uses an already installed and running native Ollama:
+
+```sh
+tilt up
+# Explicit equivalent:
+tilt up -- --runtime=native
+```
+
+Native Ollama is a prerequisite that you manage separately. It must be reachable
+from Docker Desktop at `http://host.docker.internal:11434`. Check this path if
+model setup fails. Tilt never starts, stops or reconfigures your native server.
+Native inference can use the Mac's Metal acceleration; the container option
+uses the Linux runtime and does not provide macOS Metal acceleration.
+
+To run both the app and Ollama in containers:
+
+```sh
+tilt up -- --runtime=container
+```
+
+Open [the app](http://localhost:3000) and the Tilt dashboard URL printed by Tilt.
+The app port binds only to `127.0.0.1`. Override it before starting Tilt with
+`APP_PORT=3100 tilt up`. Container Ollama has no published host port. Its models
+persist in the named `guitar-vibe-dev_ollama-models` volume.
+
+The `model-prepare` resource checks readiness for up to 60 seconds and verifies
+the selected model. If it is missing, the job pulls it with a 15-minute download
+deadline and verifies it again. The app waits for this job to succeed. The first
+model download requires internet access and disk space. Once images,
+dependencies and weights are present, ordinary inference runs offline. Requests
+never download models or fall back to a hosted service.
+
+The provisional model is `qwen2.5:1.5b`. It is not a measured winner yet. Override
+it for setup and inference with an explicit local tag:
+
+```sh
+OLLAMA_MODEL=qwen2.5:0.5b-instruct-q4_K_M tilt up
+```
+
+Model weights use native Ollama storage in native mode, or the named model volume
+in container mode. Allow memory for the model plus Docker and the Next.js server.
+Larger models can exhaust Docker's memory allocation or exceed the inference
+request's 30-second deadline. Increase resources only after measuring the model
+on your machine.
+
+Source directories mount into the app for Next.js reloads. Package or root config
+changes require an image rebuild or a Tilt restart. The Docker build context uses
+an allowlist and excludes credentials, `.git`, dependency directories, worktrees,
+benchmark output and local scratch. Compose does not load `.env.local` into the
+container; use the documented `OLLAMA_MODEL` shell override. `OLLAMA_BASE_URL` is
+set by the selected runtime.
+
+Stop Tilt, then clean up its containers and network using the same runtime:
+
+```sh
+tilt down -- --runtime=native
+# For container mode:
+tilt down -- --runtime=container
+```
+
+Shutdown keeps model weights and the Next.js cache. Do not add `--volumes` to
+normal cleanup. Native Ollama remains running.
+
+## Compose without Tilt
+
+Tilt uses `compose.yml`, adding `compose.native.yml` for native mode. The setup
+service is opt-in so it can run as a finite job. Run it before claiming the app is
+ready:
+
+```sh
+# Native Ollama:
+docker compose -f compose.yml -f compose.native.yml run --rm --no-deps model-prepare
+docker compose -f compose.yml -f compose.native.yml up --build app
+# Cleanup in another terminal:
+docker compose -f compose.yml -f compose.native.yml down
+
+# Container Ollama:
+docker compose -f compose.yml up -d --wait ollama
+docker compose -f compose.yml run --rm --no-deps model-prepare
+docker compose -f compose.yml up --build app
+# Cleanup in another terminal:
+docker compose -f compose.yml down
+```
+
+## Host development and evaluation
+
+Use Node.js 22.22.2 or another version accepted by `package.json`. The `.nvmrc`
+pins Node 22. Install the locked dependencies and keep native Ollama running:
 
 ```sh
 npm ci
+cp .env.example .env.local
+node scripts/check-model.mjs
 npm run dev
 ```
 
-Open http://localhost:3000. The baseline starts without any credentials.
-Development and production builds use Next.js's supported Webpack compiler.
-Turbopack's CSS compiler requires a local worker port that this sandbox blocks.
-Next.js's automatic agent-rule writing is disabled so running the app does
-not rewrite the repository's existing `AGENTS.md`.
-To enable progression generation, copy `.env.example` to `.env.local` and set
-`OPENROUTER_API_KEY` from your OpenRouter account. `OPENROUTER_MODEL` defaults
-to `openai/gpt-6-luna` and can be changed to another OpenRouter model ID.
-Keep `.env.local` private. Only the empty `.env.example` is versioned. Without
-the key, the app still loads, but generation returns a setup message.
+The defaults target `http://127.0.0.1:11434` and the provisional 1.5B model.
+The setup script reads shell environment variables, not Next.js env files. If
+you change the model in `.env.local`, pass that same `OLLAMA_MODEL` when running
+the setup script. Keep local environment files private.
+
+The server accepts only local HTTP endpoints with the hostnames `localhost`,
+`127.0.0.1`, `::1`, `host.docker.internal` or `ollama`. Cloud model tags and
+credentials are rejected. Unavailable models, timeouts and invalid responses
+return safe setup or retry messages; model output never supplies voicings,
+audio data or executable instructions.
+
+Prepare all candidate tags separately before evaluating. The runner never pulls
+weights. For native Ollama, use `ollama pull <tag>` for each candidate, then:
+
+```sh
+npm run eval:models -- --models qwen2.5:0.5b-instruct-q4_K_M,qwen2.5:1.5b-instruct-q4_K_M,qwen3:4b-q4_K_M --runs 3 --out evals/output/benchmark.json
+```
+
+Tilt includes a manual `eval-models` resource, triggered from its dashboard or
+`tilt trigger eval-models`. It runs the same candidate set from an app container
+and writes `evals/output/tilt.json` on the host. Prepare each candidate in the
+chosen runtime first, for example with `OLLAMA_MODEL=<tag> docker compose ...
+run --rm --no-deps model-prepare`. Container evaluation reports the Linux
+container's hardware view; run the host command for native host metadata.
+Benchmark output under `evals/output/` is ignored. Quality checks are harmony
+and vibe proxies, not proof of musical taste. Compare quality gates before
+latency and resource measurements; no model selection claim is implied.
 
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
-| `npm run dev` | Start the Next.js development server |
-| `npm run lint` | Run ESLint with the Next.js and TypeScript rules |
-| `npm run test` | Run unit and component tests once |
-| `npm run test:watch` | Run tests while developing |
-| `npm run typecheck` | Generate Next.js route types and check strict TypeScript |
-| `npm run build` | Compile the production app and check its types |
+| `tilt up` | Container app with the existing native Ollama |
+| `tilt up -- --runtime=container` | Container app and Ollama |
+| `npm run dev` | Host Next.js development server |
+| `npm run lint` | ESLint |
+| `npm run test` | Unit and component tests |
+| `node --test tests/check-model.test.mjs` | Finite model setup behavior checks |
+| `npm run test:watch` | Watch tests |
+| `npm run typecheck` | Generate route types and check TypeScript |
+| `npm run build` | Compile the production app |
 | `npm run start` | Serve the compiled production app |
-| `npm run start:pi` | Serve the production app on all network interfaces for LAN access |
+| `npm run start:pi` | Serve production on the LAN, port 3100 |
+| `npm run eval:models -- --runs 3 --out evals/output/benchmark.json` | Evaluate installed candidate models |
 
-Run lint, tests, typecheck, and build before handing off a change. Browser
-end-to-end tooling and `test:e2e` will be added with the core flow in Task 7.
+Development and production use Next.js's supported Webpack compiler.
+Automatic agent-rule writing is disabled so the app does not rewrite `AGENTS.md`.
+Run lint, tests, typecheck and build before handing off application changes.
 
-## Raspberry Pi (LAN)
+## Raspberry Pi on the LAN
 
-Run the production server on the Pi instead of `npm run dev`. The service uses
-the compiled production bundles and does not depend on the development server's
-hot-reload connection.
-
-From the app checkout on the Pi, install Node.js 22.22.2 (the version in
-`.nvmrc`), install the locked dependencies, and put `OPENROUTER_API_KEY` in a
-Next.js environment file in the project directory (prefer `.env.local`). Keep
-that file private; the systemd service runs as the checkout owner and Next.js
-loads environment files from the project directory. Variables set only in an
-SSH shell are not inherited by systemd.
+The existing systemd installer serves compiled production bundles on port 3100.
+Install Node.js 22.22.2 and provision a local Ollama runtime and model on the Pi
+separately. This installer does not install Ollama or download weights. Copy
+`.env.example` to `.env.local` and set the Pi's local endpoint and installed model.
+The app permits local endpoints only, so a remote Mac Ollama endpoint will fail
+configuration validation. Pi inference performance has not been verified.
 
 ```sh
 npm ci
+node scripts/check-model.mjs
 npm run build
 bash deploy/install-pi-service.sh
 ```
 
-The installer registers `guitar-vibe.service` for the current checkout and
-SSH user, enables it at boot, starts it, and waits up to 30 seconds for its
-local HTTP response. It uses `sudo` for systemd operations, checks that TCP
-port 3100 is free, and refuses to replace an existing service with that name.
-After installation, open `http://<pi-ip>:3100` from a device on the same
-network. Allow TCP port 3100 through the Pi's firewall if one is enabled.
+Pass the same shell model override to the setup script if you changed the model
+in `.env.local`. The installer registers `guitar-vibe.service` for the checkout
+and SSH user, enables it at boot and waits up to 30 seconds for the app's local
+HTTP response. This confirms HTTP startup, not model generation. It uses `sudo`,
+checks that port 3100 is free and refuses to replace an existing service name.
+Next.js reads environment files from the checkout; variables set only in an SSH
+shell are not inherited by systemd.
 
-For a service installed earlier on port 3000, update its unit after pulling
-these changes and rebuilding. First confirm port 3100 is unused on the Pi; no
-output from this command means no listener currently owns it:
+Open `http://<pi-ip>:3100` on the LAN. Allow TCP port 3100 through the Pi firewall
+if needed. To update, update the checkout, run `npm ci` and `npm run build`, then
+`sudo systemctl restart guitar-vibe`. Read logs with
+`sudo journalctl -u guitar-vibe -f`.
+
+For an older service using port 3000, first confirm 3100 is free, then update:
 
 ```sh
 ss -ltnH | awk '{print $4}' | grep -E ':3100$'
@@ -78,47 +195,25 @@ sudo systemctl daemon-reload
 sudo systemctl restart guitar-vibe
 ```
 
-To update the app, update the checkout, run `npm ci` and `npm run build`, then
-restart it with `sudo systemctl restart guitar-vibe`. View service logs with
-`sudo journalctl -u guitar-vibe -f`.
-
 ## Server and client boundaries
 
-- App Router pages and layouts are Server Components by default. Keep
-  `app/layout.tsx` and `app/page.tsx` on the server; compose interactive
-  components into them as needed.
-- Put credential access and provider adapters in `lib/server/`. Every module
-  in that directory must start with `import "server-only";`. The installed
-  marker makes Next.js reject an import into a client component at build time.
-  Read environment variables inside server functions so page builds do not
-  need provider credentials.
-- Put browser-only adapters in `lib/client/`. Start them with
-  `import "client-only";`.
-  Interactive components use `.client.tsx` names and start with `"use client";`.
-  Access browser APIs in effects or event handlers, since Client Components
-  may also render on the server.
-- Shared typed data and pure helpers can live directly in `lib/`. Keep them
-  free of environment reads, provider imports, browser APIs, and side effects.
-- Client code calls server routes with serializable data. Credentials never
-  use a `NEXT_PUBLIC_` prefix and never appear in client props or responses.
+App Router pages are Server Components by default. Keep server configuration and
+Ollama adapters in `lib/server/`, with `import "server-only";`. Browser adapters
+live in `lib/client/` with `import "client-only";`. Client Components use
+`"use client";` and access browser APIs in effects or event handlers. Shared
+helpers remain free of environment reads and browser side effects.
 
-Progression generation uses the OpenRouter provider for the Vercel AI SDK.
-The browser submits selected catalog IDs; the server maps those IDs to labels,
-requests structured chord symbols, and resolves every chord against local
-supported guitar voicings before returning it.
+The browser posts known vibe IDs to the server. The server limits each model
+request to one bounded generation with a 2,048-token context and 128 generated
+tokens, validates 3-8 chord symbols and supplies trusted local voicings and audio.
+No environment value uses a `NEXT_PUBLIC_` prefix.
 
-Vitest uses React Testing Library and jsdom for synchronous component tests.
-Pure domain tests can select the Node environment with
-`// @vitest-environment node`. Test asynchronous Server Components through
-the browser flow once end-to-end tooling is added.
+Existing asset license files remain with their assets. This document does not
+establish a license for the app or downloaded model weights.
 
 ## Tooling references
 
-The baseline follows the official [Next.js installation guide](https://nextjs.org/docs/app/getting-started/installation),
-[Next.js ESLint guide](https://nextjs.org/docs/app/api-reference/config/eslint),
-[Next.js Vitest guide](https://nextjs.org/docs/app/guides/testing/vitest),
-and [Tailwind Next.js guide](https://tailwindcss.com/docs/installation/framework-guides/nextjs).
-The boundary convention follows [Next.js Server and Client Components](https://nextjs.org/docs/app/getting-started/server-and-client-components).
-Tests resolve the shared `@/*` alias through [Vite's native TypeScript paths support](https://vite.dev/config/shared-options#resolve-tsconfigpaths).
-The generation integration follows OpenRouter's [Vercel AI SDK provider guide](https://openrouter.ai/docs/guides/community/frameworks-and-integrations-overview)
-and the AI SDK's [structured output guide](https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data).
+See the official [Next.js guides](https://nextjs.org/docs/app/getting-started/installation),
+[Tilt Compose guide](https://docs.tilt.dev/docker_compose.html),
+[Compose merge rules](https://docs.docker.com/reference/compose-file/merge/),
+and [Ollama API documentation](https://docs.ollama.com/api).
