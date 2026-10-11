@@ -1,0 +1,13 @@
+{
+  "_comment": "Reviewed dependency advisories. Every entry is a deliberate acceptance with an owner and an expiry. An entry past its expiry blocks, so none of these can be quietly forgotten. Remove an entry the moment the dependency is fixed or the advisory disappears — scripts/check-deps.mjs warns about stale entries, and a shrinking baseline is the signal the bar moved back up.",
+  "advisories": {
+    "GHSA-vfj7-8cjw-p6xm": {
+      "package": "braces",
+      "severity": "HIGH",
+      "reason": "CVE-2026-93687, stack exhaustion via deeply nested brace patterns. Reached only through the dev-only chain eslint-config-next -> @next/eslint-plugin-next -> fast-glob -> micromatch -> braces. It executes during lint with patterns this repo controls; there is no path by which an attacker supplies the glob. No fixed version is published upstream.",
+      "owner": "@addy",
+      "expires": "2026-11-01",
+      "recheck": "When braces 3.0.4 ships, bump and delete this entry."
+    }
+  }
+}

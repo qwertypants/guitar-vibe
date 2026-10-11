@@ -1,3 +1,8 @@
+## Constraints
+
+Read `CONSTRAINTS.md` before writing code. Do not weaken it to make a change pass.
+Run `npm run check:fast` after every edit and `npm run check:task` before handing work back.
+
 ## Version control
 
 - Use normal Git for inspection, branches, commits, and history operations.

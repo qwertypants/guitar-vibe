@@ -1,0 +1,5 @@
+# Paths exempt from scripts/floor-guard.mjs, one glob per line.
+# Every entry is a deliberate exemption, not a loosened rule.
+
+# The guard's own pattern literals necessarily contain the words it searches for.
+scripts/floor-guard.mjs
