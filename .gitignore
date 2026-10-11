@@ -25,3 +25,11 @@ npm-debug.log*
 
 # Transient benchmark runs; curated results may be committed.
 /evals/output/
+
+# Internal agent tooling and personal workflow
+AGENTS.md
+CONSTRAINTS.md
+opencode.json
+skills-lock.json
+.agents/
+.superpowers/
