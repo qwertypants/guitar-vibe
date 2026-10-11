@@ -2,15 +2,16 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { arch, cpus, platform, release, totalmem } from "node:os";
+import { createHash } from "node:crypto";
 import { z } from "zod";
-import { generateLocalProgression, getLocalModelConfig, LocalModelError } from "../lib/server/local-model";
+import { generateLocalProgression, getLocalModelConfig, LOCAL_MODEL_PROMPT_TEMPLATE, LocalModelError } from "../lib/server/local-model";
 import { CASES } from "./cases";
 import { aggregate, chooseWinner, scoreProgression, type Sample } from "./scoring";
 
 export const LIMITATIONS = "Automatic tonal-coherence and vibe checks are transparent proxies, not human judgments. Borrowed harmony may fail the common-scale heuristic. These checks do not replace listening or a human vibe assessment. Benchmarks apply only to this shortlist and hardware. First request is not cold: no model is unloaded. Ollama residency estimates are not process RSS or total system memory.";
 export type CliOptions = { models: string[]; runs: number; out: string };
 export function parseArgs(args: readonly string[]): CliOptions {
-  const options = { models: ["qwen2.5:0.5b-instruct-q4_K_M", "qwen2.5:1.5b-instruct-q4_K_M", "qwen3:4b-q4_K_M"], runs: 3, out: "evals/output/benchmark.json" };
+  const options = { models: ["qwen2.5:0.5b-instruct-q4_K_M", "qwen2.5:1.5b-instruct-q4_K_M", "qwen3:4b-q4_K_M", "qwen3.5:2b-nvfp4", "granite4:micro"], runs: 3, out: "evals/output/benchmark.json" };
   const seen = new Set<string>();
   for (let i = 0; i < args.length; i += 2) {
     const flag = args[i]; const value = args[i + 1];
@@ -34,6 +35,7 @@ const details = z.object({ parameter_size: z.string().optional(), quantization_l
 const installedSchema = z.object({ models: z.array(z.object({name: z.string(), digest: z.string(), size: z.number().nonnegative(), details: details.optional()})) });
 const loadedSchema = z.object({ models: z.array(z.object({ name: z.string(), digest: z.string(), size: z.number().nonnegative(), size_vram: z.number().nonnegative(), expires_at: z.string().optional() })) });
 const showSchema = z.object({details: details.optional(), model_info: z.record(z.string(), z.unknown()).optional()});
+const versionSchema = z.object({version: z.string().min(1)});
 async function localJson(baseUrl: string, path: string, model?: string): Promise<unknown> {
   const signal = AbortSignal.timeout(5_000);
   const response = await fetch(`${baseUrl}${path}`, { signal, redirect: "error", ...(model ? {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({model})} : {}) });
@@ -64,11 +66,16 @@ export async function inspectModel(model: string, baseUrl: string) {
   catch (cause) { metadata.errors.push(`ps: ${String(cause)}`); }
   return metadata;
 }
+async function inspectOllamaVersion(baseUrl: string): Promise<string | null> {
+  try { return versionSchema.parse(await localJson(baseUrl, "/api/version")).version; }
+  catch { return null; }
+}
 type Inspection = Awaited<ReturnType<typeof inspectModel>> | { error: string };
 type Dependencies = { generate: typeof generateLocalProgression; inspect: (model: string, baseUrl: string) => Promise<Inspection> };
 export async function runBenchmark(options: CliOptions, deps: Dependencies = { generate: generateLocalProgression, inspect: inspectModel }) {
   const models: { model: string; metadataBefore: Inspection; metadataAfter: Inspection; samples: Sample[]; summary: ReturnType<typeof aggregate> }[] = [];
   const baseUrl = getLocalModelConfig().baseUrl;
+  const ollamaVersion = await inspectOllamaVersion(baseUrl);
   for (const model of options.models) {
     const config = getLocalModelConfig({model, baseUrl});
     const metadataBefore = await deps.inspect(model, config.baseUrl);
@@ -92,7 +99,9 @@ export async function runBenchmark(options: CliOptions, deps: Dependencies = { g
     const loadedBytes = "loaded" in metadataAfter ? metadataAfter.loaded?.size ?? null : null;
     models.push({ model, metadataBefore, metadataAfter, samples, summary: aggregate(model, samples, loadedBytes) });
   }
-  return { schemaVersion: 1, createdAt: new Date().toISOString(), limitations: LIMITATIONS, hardware: { platform: platform(), release: release(), arch: arch(), cpu: cpus()[0]?.model, logicalCpus: cpus().length, systemMemoryBytes: totalmem(), node: process.version },
+  return { schemaVersion: 1, createdAt: new Date().toISOString(), limitations: LIMITATIONS,
+    ollama: { version: ollamaVersion }, prompt: { templateSha256: createHash("sha256").update(LOCAL_MODEL_PROMPT_TEMPLATE).digest("hex") },
+    hardware: { platform: platform(), release: release(), arch: arch(), cpu: cpus()[0]?.model, logicalCpus: cpus().length, systemMemoryBytes: totalmem(), node: process.version },
     settings: {baseUrl, temperature: 0.2, num_ctx: 2048, num_predict: 128, think: false, keep_alive: "5m", seeds: Array.from({length: options.runs}, (_, i) => 4242 + i), runs: options.runs, concurrency: 1, unloadingPerformed: false, percentileMethod: "nearest rank; scored requests including failures; first and warmup excluded"},
     gates: { validPlayableRate: 1, proxyPassRate: 0.8, distinctProgressions: 3 },
     proxyDefinitions: { minor: "At least one minor triad or minor seventh", "major-opening": "First chord is a major triad, major seventh or dominant seventh", seventh: "At least one dominant, major or minor seventh", triads: "At least 75% major/minor triads", blues: "All chords dominant sevenths with exactly I, IV and V roots for some tonic", coherence: "At least 75% whole chords fit one common major or natural-minor pitch-class set; blues uses root relationship instead", variety: "At least two distinct chords per progression and three exact ordered chord arrays across the corpus" },

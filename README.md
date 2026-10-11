@@ -44,8 +44,8 @@ model download requires internet access and disk space. Once images,
 dependencies and weights are present, ordinary inference runs offline. Requests
 never download models or fall back to a hosted service.
 
-The provisional model is `qwen2.5:1.5b`. It is not a measured winner yet. Override
-it for setup and inference with an explicit local tag:
+The provisional inference model is `qwen2.5:1.5b`. It is not a measured winner
+yet. Override it for setup and inference with an explicit local tag:
 
 ```sh
 OLLAMA_MODEL=qwen2.5:0.5b-instruct-q4_K_M tilt up
@@ -119,19 +119,25 @@ credentials are rejected. Unavailable models, timeouts and invalid responses
 return safe setup or retry messages; model output never supplies voicings,
 audio data or executable instructions.
 
-Prepare all candidate tags separately before evaluating. The runner never pulls
-weights. For native Ollama, use `ollama pull <tag>` for each candidate, then:
+The five-model evaluation shortlist is `qwen2.5:0.5b-instruct-q4_K_M`,
+`qwen2.5:1.5b-instruct-q4_K_M`, `qwen3:4b-q4_K_M`, `qwen3.5:2b-nvfp4` and
+`granite4:micro`. The `qwen3.5:2b-nvfp4` tag is MLX and runs only with native
+Ollama on Apple Silicon; it is not a Linux-container candidate. Prepare each
+candidate separately before evaluating. The runner never pulls weights. For
+native Ollama, use `ollama pull <tag>` for each candidate, then:
 
 ```sh
-npm run eval:models -- --models qwen2.5:0.5b-instruct-q4_K_M,qwen2.5:1.5b-instruct-q4_K_M,qwen3:4b-q4_K_M --runs 3 --out evals/output/benchmark.json
+npm run eval:models -- --runs 3 --out evals/output/benchmark.json
 ```
 
 Tilt includes a manual `eval-models` resource, triggered from its dashboard or
-`tilt trigger eval-models`. It runs the same candidate set from an app container
-and writes `evals/output/tilt.json` on the host. Prepare each candidate in the
-chosen runtime first, for example with `OLLAMA_MODEL=<tag> docker compose ...
-run --rm --no-deps model-prepare`. Container evaluation reports the Linux
-container's hardware view; run the host command for native host metadata.
+`tilt trigger eval-models`. Native mode uses the runner's five-model default
+shortlist; Linux container mode explicitly passes the four portable candidates
+and omits the MLX-only NVFP4 tag. The resource writes `evals/output/tilt.json`
+on the host. Prepare each candidate supported by the chosen runtime first, for
+example with `OLLAMA_MODEL=<tag> docker compose ... run --rm --no-deps
+model-prepare`. Container evaluation reports the Linux container's hardware
+view; run the host command for native host metadata.
 Benchmark output under `evals/output/` is ignored. Quality checks are harmony
 and vibe proxies, not proof of musical taste. Compare quality gates before
 latency and resource measurements; no model selection claim is implied.

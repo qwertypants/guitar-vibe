@@ -59,6 +59,15 @@ describe("CLI and execution", () => {
   it("parses explicit models, repetitions, output", () => {
     expect(parseArgs(["--models", "qwen2.5:1.5b", "--runs", "2", "--out", "/tmp/eval.json"])).toEqual({ models: ["qwen2.5:1.5b"], runs: 2, out: "/tmp/eval.json" });
   });
+  it("defaults to the reviewed five-model shortlist in stable order", () => {
+    expect(parseArgs([]).models).toEqual([
+      "qwen2.5:0.5b-instruct-q4_K_M",
+      "qwen2.5:1.5b-instruct-q4_K_M",
+      "qwen3:4b-q4_K_M",
+      "qwen3.5:2b-nvfp4",
+      "granite4:micro",
+    ]);
+  });
   it("records failed requests, runs sequentially, and uses matching fixed seeds", async () => {
     let active = 0; const calls: {model?: string; seed?: number}[] = [];
     const generate = vi.fn(async (_ids: readonly string[], options: { model?: string; seed?: number } = {}) => {
@@ -76,6 +85,21 @@ describe("CLI and execution", () => {
 });
 
 describe("real adapter boundary and metadata", () => {
+  it("records Ollama version and a reproducible prompt-template fingerprint", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (new URL(url).pathname === "/api/version") return Response.json({version: "0.40.2"});
+      return Response.json({});
+    }));
+    const generate = vi.fn(async () => ({chords: ["Am", "F", "G"], metrics: {wallMs: 1, loadMs: 0, generationMs: 1, promptTokens: 1, outputTokens: 1}}));
+    const inspect = vi.fn(async () => ({error: "not needed"}));
+    const report = await runBenchmark({models: ["qwen2.5:1.5b"], runs: 1, out: "/tmp/unused"}, {generate, inspect});
+    expect(report.ollama.version).toBe("0.40.2");
+    expect(report.prompt.templateSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(report.prompt.templateSha256).toBe(
+      (await import("node:crypto")).createHash("sha256").update((await import("@/lib/server/local-model")).LOCAL_MODEL_PROMPT_TEMPLATE).digest("hex"),
+    );
+  });
+
   it("retains canonical identity and residency for a shorthand model", async () => {
     vi.stubGlobal("fetch", vi.fn(async (url: string) => {
       const path = new URL(url).pathname;
@@ -115,7 +139,7 @@ describe("real adapter boundary and metadata", () => {
     expect(chats[2]?.body).toMatchObject({model: "qwen2.5:1.5b", think: false, stream: false, options: {temperature: 0.2, num_ctx: 2048, num_predict: 128, seed: 4242}});
     expect(model?.samples[2]).toMatchObject({kind: "accepted", chords: ["Am", "F", "G"], metrics: {loadMs: 1, generationMs: 2, promptTokens: 10, outputTokens: 8}});
     expect(result.winner).toBe(null);
-    expect(requests.every(r => ["/api/tags", "/api/show", "/api/ps", "/api/chat"].includes(r.path))).toBe(true);
+    expect(requests.every(r => ["/api/version", "/api/tags", "/api/show", "/api/ps", "/api/chat"].includes(r.path))).toBe(true);
   });
   it("records metadata failures without inventing sizes", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => Response.json({}, {status: 503})));

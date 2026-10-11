@@ -22,9 +22,13 @@ local_resource(
 )
 dc_resource('app', resource_deps=['model-prepare'], links=['http://localhost:' + os.getenv('APP_PORT', '3000')])
 
+eval_args = ['--runs', '3', '--out', 'evals/output/tilt.json']
+if runtime == 'container':
+    eval_args = ['--models', 'qwen2.5:0.5b-instruct-q4_K_M,qwen2.5:1.5b-instruct-q4_K_M,qwen3:4b-q4_K_M,granite4:micro'] + eval_args
+
 local_resource(
     'eval-models',
-    cmd=compose + ['run', '--rm', '--no-deps', 'app', 'npm', 'run', 'eval:models', '--', '--models', 'qwen2.5:0.5b-instruct-q4_K_M,qwen2.5:1.5b-instruct-q4_K_M,qwen3:4b-q4_K_M', '--runs', '3', '--out', 'evals/output/tilt.json'],
+    cmd=compose + ['run', '--rm', '--no-deps', 'app', 'npm', 'run', 'eval:models', '--'] + eval_args,
     resource_deps=['model-prepare'],
     trigger_mode=TRIGGER_MODE_MANUAL,
     auto_init=False,

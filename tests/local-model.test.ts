@@ -30,6 +30,18 @@ describe("local generation", () => {
     expect(body.format.properties.chords.items.enum).toEqual(SUPPORTED_CHORDS.map(({ symbol }) => symbol));
     expect(body.messages.map((message: { content: string }) => message.content).join(" ")).toContain("Melancholy");
   });
+  it("gives explicit tonal and genre constraints without prescribing chord sequences", async () => {
+    network.mockResolvedValue(Response.json(envelope()));
+    await generateLocalProgression(ids);
+    const [, init] = network.mock.calls[0]!;
+    const body = JSON.parse(String(init?.body));
+    const prompt = body.messages.map((message: { content: string }) => message.content).join("\n");
+    expect(prompt).toMatch(/single tonal center/i);
+    expect(prompt).toMatch(/keep every chord within the same major or natural-minor scale/i);
+    expect(prompt).toMatch(/For blues, choose any tonic and use only dominant-7 chords on its I, IV, and V roots/i);
+    expect(prompt).toMatch(/For folk or pop, favor triads and avoid sevenths/i);
+    expect(prompt).not.toMatch(/Am7.*Dm7.*G7/i);
+  });
   it.each([[], ["unknown"], ["mood-dark", "mood-dark"], ["mood-dark", "mood-joyful"], Array(6).fill("genre-jazz")])("rejects invalid selection %j before inference", async (selection) => {
     await expect(generateLocalProgression(selection)).rejects.toMatchObject({ code: "invalid_input" });
     expect(network).not.toHaveBeenCalled();
