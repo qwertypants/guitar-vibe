@@ -44,7 +44,7 @@ button:not(:disabled):hover {
 }
 
 .chord-diagram > div {
-  width: 180px;
+  width: 240px;
   max-width: 100%;
 }
 
@@ -102,8 +102,6 @@ dialog::backdrop { background: rgb(0 0 0 / 45%); }
 .note-pill { background: color-mix(in srgb, var(--accent) 12%, var(--card)); color: var(--accent); }
 .position-button { min-height: 44px; padding: .4rem .75rem; border: 1px solid color-mix(in srgb, var(--foreground) 18%, transparent); border-radius: 999px; font-size: .75rem; color: var(--muted); }
 .position-button[aria-pressed="true"] { background: var(--foreground); color: var(--card); border-color: var(--foreground); }
-.chord-play { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: var(--accent); color: var(--accent-foreground); box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 18%, transparent); }
-.chord-play[aria-pressed="true"] { background: var(--foreground); color: var(--card); }
 @media (max-width: 767px) { .generation-actions { position: sticky; bottom: 0; padding: .75rem 0; background: var(--background); z-index: 5; } }
 @media (max-width: 767px) {
   .tab-bar[aria-label="Vibe categories"] { gap: 0; }

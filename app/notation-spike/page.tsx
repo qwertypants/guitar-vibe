@@ -10,9 +10,9 @@ export default function NotationSpike() {
   return (
     <main className="mx-auto min-h-screen max-w-6xl space-y-6 px-4 py-8 sm:px-6">
       <h1 className="text-2xl font-semibold">VexChords diagram fixture</h1>
-      <p>Preview each C major position, or play all shown positions in numbered order. Audio uses the exact displayed notes. Turn your volume down before playing.</p>
+      <p>Press a C major diagram to hear its position, or play all shown positions in numbered order. Audio uses the exact displayed notes. Turn your volume down before playing.</p>
       <PlaybackControls voicings={chord.voicings}>
-        {(voicing) => <ChordNotation voicing={voicing} />}
+        {(voicing, _index, preview) => <ChordNotation voicing={voicing} onPlay={() => preview(voicing)} />}
       </PlaybackControls>
     </main>
   );

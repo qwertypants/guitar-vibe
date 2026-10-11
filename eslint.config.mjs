@@ -7,6 +7,7 @@ export default defineConfig([
   ...nextTypescript,
   globalIgnores([
     ".next/**",
+    ".worktrees/**",
     "out/**",
     "coverage/**",
     "graft/**",

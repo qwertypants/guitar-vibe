@@ -17,7 +17,7 @@ function isDarkColorScheme() {
   return typeof window !== "undefined" && !!window.matchMedia?.(colorSchemeQuery).matches;
 }
 
-export function ChordNotation({ voicing }: { voicing: ChordVoicing }) {
+export function ChordNotation({ voicing, onPlay }: { voicing: ChordVoicing; onPlay: () => void }) {
   const host = useRef<HTMLDivElement>(null);
   const [failedVoicing, setFailedVoicing] = useState<ChordVoicing | null>(null);
   const isDark = useSyncExternalStore(subscribeToColorScheme, isDarkColorScheme, () => false);
@@ -45,11 +45,14 @@ export function ChordNotation({ voicing }: { voicing: ChordVoicing }) {
 
   return (
     <figure className="space-y-3 text-sm text-muted">
-      <figcaption className="space-y-1 pr-14">
+      <figcaption className="space-y-1">
         <span className="chord-name block text-foreground">{voicing.chord}</span>
         <span className="block text-sm text-muted">{voicing.label}</span>
       </figcaption>
-      <div ref={host} role="img" aria-label={`${voicing.chord}, ${voicing.label}, guitar chord diagram`} className="chord-diagram flex justify-center" />
+      <button type="button" onClick={onPlay} aria-label={`Play ${voicing.chord}, ${voicing.label}`}
+        className="chord-diagram-button mx-auto block w-full max-w-[240px] rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+        <div ref={host} aria-hidden="true" className="chord-diagram flex justify-center" />
+      </button>
       {failedVoicing === voicing && <p role="alert">Chord diagram is unavailable for this position. Use the frets and notes below.</p>}
       <div className="chord-details space-y-2" aria-label="Chord details">
         <div className="flex flex-wrap items-center gap-1" aria-label="Strings, low E to high E">

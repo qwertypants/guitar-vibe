@@ -167,7 +167,7 @@ export function VibeChooser() {
           <button type="button" aria-label="Close help" onClick={closeHelp}
             className="flex min-h-11 min-w-11 items-center justify-center rounded-md border border-foreground/20"><UiIcon name="close" /></button>
         </div>
-        <p className="mt-3 text-sm text-muted">Pick a mood and any details you like, then generate a chord progression. Preview a chord or play the full progression.</p>
+        <p className="mt-3 text-sm text-muted">Pick a mood and any details you like, then generate a chord progression. Press a diagram or guitar position to hear a chord, or play the full progression.</p>
         <button type="button" onClick={closeHelp}
           className="mt-5 min-h-11 rounded-md bg-accent px-5 py-2 text-sm font-medium text-accent-foreground">Done</button>
       </dialog>}

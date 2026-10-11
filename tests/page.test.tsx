@@ -94,7 +94,7 @@ test("generation opens Play, position buttons update diagrams, and a failed repl
   fireEvent.click(alternate);
   expect(alternate).toHaveFocus();
   expect(alternate).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getByRole("img", { name: "C, Fret 8 (E-shape), guitar chord diagram" })).toBeVisible();
+  expect(screen.getByRole("button", { name: "Play C, Fret 8 (E-shape)" })).toBeVisible();
   expect(screen.getAllByText("Low E string:").length).toBeGreaterThan(0);
   expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Edit vibe" }));

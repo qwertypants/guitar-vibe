@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 import { ChordNotation } from "@/components/ChordNotation";
 import * as notation from "@/lib/chord-notation";
@@ -34,7 +34,7 @@ test("real VexChords renders open and higher C positions and replaces the select
   const open = chord.voicings[0];
   const higher = chord.voicings.find((voicing) => voicing.id === "C-E");
   if (!higher) throw new Error("Missing higher fixture position");
-  const { container, rerender, unmount } = render(<ChordNotation voicing={open} />);
+  const { container, rerender, unmount } = render(<ChordNotation voicing={open} onPlay={() => {}} />);
   await waitFor(() => expect(container.querySelectorAll("svg")).toHaveLength(1));
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(container.querySelector("details")).toBeNull();
@@ -42,7 +42,7 @@ test("real VexChords renders open and higher C positions and replaces the select
   const openSvg = container.querySelector("svg");
   expect(openSvg).toHaveAttribute("viewBox", "0 0 240 280");
   expect(openSvg?.querySelectorAll("circle").length).toBeGreaterThan(0);
-  rerender(<ChordNotation voicing={higher} />);
+  rerender(<ChordNotation voicing={higher} onPlay={() => {}} />);
   await waitFor(() => {
     expect(container.querySelectorAll("svg")).toHaveLength(1);
     expect(container.querySelector("svg")).not.toBe(openSvg);
@@ -51,6 +51,24 @@ test("real VexChords renders open and higher C positions and replaces the select
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   unmount();
   expect(container.querySelector("svg")).toBeNull();
+});
+
+test("the diagram alone is the replay button and its name follows the displayed position", () => {
+  const chord = resolveChord("C");
+  if (chord.kind !== "resolved") throw new Error("Missing C");
+  const onPlay = vi.fn();
+  const { rerender } = render(<ChordNotation voicing={chord.voicings[0]} onPlay={onPlay} />);
+  const button = screen.getByRole("button", { name: "Play C, Open position" });
+  fireEvent.click(screen.getByText("C"));
+  fireEvent.click(screen.getByLabelText("Chord details"));
+  expect(onPlay).not.toHaveBeenCalled();
+  fireEvent.click(button);
+  fireEvent.click(button);
+  expect(onPlay).toHaveBeenCalledTimes(2);
+  const higher = chord.voicings[1];
+  if (!higher) throw new Error("Missing alternate C");
+  rerender(<ChordNotation voicing={higher} onPlay={onPlay} />);
+  expect(screen.getByRole("button", { name: `Play C, ${higher.label}` })).toBe(button);
 });
 
 test("system theme changes redraw the current diagram with computed theme colors", async () => {
@@ -64,7 +82,7 @@ test("system theme changes redraw the current diagram with computed theme colors
 
   const chord = resolveChord("C");
   if (chord.kind !== "resolved") throw new Error("Missing C");
-  const { container, unmount } = render(<ChordNotation voicing={chord.voicings[0]} />);
+  const { container, unmount } = render(<ChordNotation voicing={chord.voicings[0]} onPlay={() => {}} />);
   await waitFor(() => expect(container.querySelectorAll("svg")).toHaveLength(1));
   const lightSvg = container.querySelector("svg");
   expect(lightSvg?.outerHTML).toContain('fill="#241c17"');
@@ -98,16 +116,16 @@ test("failed diagrams retain text and recover on a new selection", async () => {
   const next = chord.voicings[1];
   if (!next) throw new Error("Missing alternate C");
   const renderer = vi.spyOn(notation, "renderChordNotation").mockRejectedValueOnce(new Error("Failed render"));
-  const { rerender } = render(<ChordNotation voicing={chord.voicings[0]} />);
+  const { rerender } = render(<ChordNotation voicing={chord.voicings[0]} onPlay={() => {}} />);
   await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Chord diagram is unavailable"));
   expect(screen.getByLabelText("Chord details")).toBeVisible();
   expect(screen.getByLabelText("Strings, low E to high E")).toBeVisible();
   expect(screen.getByLabelText("Chord details")).toBeVisible();
   renderer.mockResolvedValue(undefined);
-  rerender(<ChordNotation voicing={next} />);
+  rerender(<ChordNotation voicing={next} onPlay={() => {}} />);
   await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
   expect(screen.getByLabelText("Chord details")).toBeVisible();
-  rerender(<ChordNotation voicing={chord.voicings[0]} />);
+  rerender(<ChordNotation voicing={chord.voicings[0]} onPlay={() => {}} />);
   await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
 });
 
@@ -124,13 +142,13 @@ test("rapid selections detach stale drawings and ignore stale failures", async (
   vi.spyOn(notation, "renderChordNotation").mockImplementation((element) => new Promise<void>((resolve, reject) => {
     pending.push({ element, resolve, reject });
   }));
-  const { container, rerender, unmount } = render(<ChordNotation voicing={chord.voicings[0]} />);
-  rerender(<ChordNotation voicing={next} />);
+  const { container, rerender, unmount } = render(<ChordNotation voicing={chord.voicings[0]} onPlay={() => {}} />);
+  rerender(<ChordNotation voicing={next} onPlay={() => {}} />);
   act(() => {
     dark = true;
     media.dispatchEvent(new Event("change"));
   });
-  rerender(<ChordNotation voicing={last} />);
+  rerender(<ChordNotation voicing={last} onPlay={() => {}} />);
   const [firstRender, secondRender, themeRender, lastRender] = pending;
   if (!firstRender || !secondRender || !themeRender || !lastRender) throw new Error("Missing render calls");
   await act(async () => {
