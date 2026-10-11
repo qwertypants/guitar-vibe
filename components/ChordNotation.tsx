@@ -44,8 +44,8 @@ export function ChordNotation({ voicing, onPlay }: { voicing: ChordVoicing; onPl
   }, [voicing, isDark]);
 
   return (
-    <figure className="space-y-3 text-sm text-muted">
-      <figcaption className="space-y-1">
+    <figure className="chord-notation text-sm text-muted">
+      <figcaption className="chord-title">
         <span className="chord-name block text-foreground">{voicing.chord}</span>
         <span className="block text-sm text-muted">{voicing.label}</span>
       </figcaption>
@@ -53,20 +53,22 @@ export function ChordNotation({ voicing, onPlay }: { voicing: ChordVoicing; onPl
         className="chord-diagram-button mx-auto block w-full max-w-[320px] rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
         <div ref={host} aria-hidden="true" className="chord-diagram flex justify-center" />
       </button>
-      {failedVoicing === voicing && <p role="alert">Chord diagram is unavailable for this position. Use the frets and notes below.</p>}
-      <div className="chord-details space-y-2" aria-label="Chord details">
+      <div className="chord-details" aria-label="Chord details">
         <div className="flex flex-wrap items-center gap-1" aria-label="Strings, low E to high E">
-          <span className="detail-label">Frets</span>
+          <span className="detail-icon" aria-hidden="true">🎸</span>
+          <span className="sr-only">Frets</span>
           {voicing.frets.map((fret, index) => <span className="fret-pill" key={index}>
             <span className="sr-only">{["Low E string", "A string", "D string", "G string", "B string", "High E string"][index]}: </span>
             {fret ?? "×"}
           </span>)}
         </div>
-        <div className="flex flex-wrap items-center gap-1">
-          <span className="detail-label">Notes</span>
+        <div className="flex flex-wrap items-center gap-1" aria-label="Notes">
+          <span className="detail-icon" aria-hidden="true">🎵</span>
+          <span className="sr-only">Notes</span>
           {voicing.notes.map((note, index) => <span className="note-pill" key={index}>{note.name}</span>)}
         </div>
       </div>
+      {failedVoicing === voicing && <p className="chord-notation-error" role="alert">Chord diagram is unavailable for this position. Use the frets and notes beside the chord name.</p>}
     </figure>
   );
 }
