@@ -24,8 +24,8 @@ export function PlaybackControls({ voicings, children, active = true, createCont
     const index = state.kind === "sequence" ? state.index : voicings.findIndex((voicing) => voicing.id === state.voicingId);
     const name = grid.current?.children[index]?.querySelector<HTMLElement>(".chord-name");
     if (!name) return;
-    const tween = gsap.fromTo(name, { scale: 1.22, rotation: -5, y: -8 },
-      { scale: 1, rotation: 0, y: 0, duration: 0.53, ease: "elastic.out(1, 0.42)", overwrite: "auto" });
+    const tween = gsap.fromTo(name, { scale: 1.08, y: -2 },
+      { scale: 1, y: 0, duration: 0.24, ease: "power2.out", overwrite: "auto" });
     return () => { tween.kill(); gsap.set(name, { clearProps: "transform" }); };
   }, { scope: grid, dependencies: [state] });
   useEffect(() => {
@@ -42,7 +42,7 @@ export function PlaybackControls({ voicings, children, active = true, createCont
   const preview = (voicing: ChordVoicing) => start(() => controller.preview(voicing));
   const buttonClass = "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-foreground/20 px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2";
   return (
-    <section aria-label="Chord playback" className="space-y-4">
+    <section aria-label="Chord playback" className="chord-playback space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" className={`${buttonClass} border-accent bg-accent text-accent-foreground`} disabled={voicings.length === 0}
           aria-pressed={state.kind === "sequence"}

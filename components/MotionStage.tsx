@@ -119,5 +119,5 @@ export function MotionStage({ children }: { children: ReactNode }) {
     };
   }, { scope: root });
 
-  return <main ref={root} className="motion-stage mx-auto min-h-screen max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-8">{children}</main>;
+  return <main ref={root} className="motion-stage page-shell mx-auto min-h-screen max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-8">{children}</main>;
 }
