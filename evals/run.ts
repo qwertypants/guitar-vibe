@@ -52,13 +52,15 @@ async function localJson(baseUrl: string, path: string, model?: string): Promise
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 export async function inspectModel(model: string, baseUrl: string) {
+  // Ollama defaults an untagged final path segment to :latest; registry ports are not tags.
+  const modelName = model.lastIndexOf(":") > model.lastIndexOf("/") ? model : `${model}:latest`;
   const metadata: { installed?: z.infer<typeof installedSchema>["models"][number] | undefined; show?: z.infer<typeof showSchema>; loaded?: z.infer<typeof loadedSchema>["models"][number] | undefined; errors: string[] } = { errors: [] };
   // Metadata requests are also sequential and bounded; they never pull or unload.
-  try { metadata.installed = installedSchema.parse(await localJson(baseUrl, "/api/tags")).models.find(m => m.name === model); }
+  try { metadata.installed = installedSchema.parse(await localJson(baseUrl, "/api/tags")).models.find(m => m.name === modelName); }
   catch (cause) { metadata.errors.push(`tags: ${String(cause)}`); }
-  try { metadata.show = showSchema.parse(await localJson(baseUrl, "/api/show", model)); }
+  try { metadata.show = showSchema.parse(await localJson(baseUrl, "/api/show", modelName)); }
   catch (cause) { metadata.errors.push(`show: ${String(cause)}`); }
-  try { metadata.loaded = loadedSchema.parse(await localJson(baseUrl, "/api/ps")).models.find(m => m.name === model); }
+  try { metadata.loaded = loadedSchema.parse(await localJson(baseUrl, "/api/ps")).models.find(m => m.name === modelName); }
   catch (cause) { metadata.errors.push(`ps: ${String(cause)}`); }
   return metadata;
 }

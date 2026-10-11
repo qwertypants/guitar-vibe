@@ -76,6 +76,25 @@ describe("CLI and execution", () => {
 });
 
 describe("real adapter boundary and metadata", () => {
+  it("retains canonical identity and residency for a shorthand model", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const path = new URL(url).pathname;
+      if (path === "/api/tags") return Response.json({models: [{name: "qwen2.5:latest", digest: "sha256:canonical", size: 123}]});
+      if (path === "/api/show") return Response.json({});
+      if (path === "/api/ps") return Response.json({models: [{name: "qwen2.5:latest", digest: "sha256:canonical", size: 456, size_vram: 300}]});
+      return Response.json({message: {role: "assistant", content: JSON.stringify({chords: ["Am", "F", "G"]})}, done: true, done_reason: "stop"});
+    }));
+    const result = await runBenchmark({models: ["qwen2.5"], runs: 1, out: "/tmp/unused"});
+    const model = result.models[0];
+    const metadata = {
+      installed: {name: "qwen2.5:latest", digest: "sha256:canonical", size: 123},
+      loaded: {name: "qwen2.5:latest", digest: "sha256:canonical", size: 456, size_vram: 300},
+      errors: [],
+    };
+    expect(model?.metadataBefore).toMatchObject(metadata);
+    expect(model?.metadataAfter).toMatchObject(metadata);
+    expect(model?.summary.loadedBytes).toBe(456);
+  });
   it("uses the runtime adapter settings and retains exact identity and residency", async () => {
     const requests: { path: string; body: unknown }[] = [];
     vi.stubGlobal("fetch", vi.fn(async (url: string, options?: RequestInit) => {
