@@ -21,8 +21,8 @@ export async function renderChordNotation(element: HTMLElement, voicing: ChordVo
   const theme = getComputedStyle(document.documentElement);
   const color = (token: string) => theme.getPropertyValue(token).trim();
   const diagram = new ChordBox(element, {
-    width: 240,
-    height: 280,
+    width: 320,
+    height: 373,
     numStrings: 6,
     numFrets: 5,
     showTuning: true,
@@ -35,5 +35,5 @@ export async function renderChordNotation(element: HTMLElement, voicing: ChordVo
     fontFamily: "Arial, sans-serif",
   });
   diagram.draw(voicingToVexChords(voicing));
-  element.querySelector("svg")?.setAttribute("viewBox", "0 0 240 280");
+  element.querySelector("svg")?.setAttribute("viewBox", "0 0 320 373");
 }

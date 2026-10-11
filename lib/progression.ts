@@ -7,7 +7,7 @@ export const progressionRequestSchema = z.object({
 }).strict();
 
 export const progressionSchema = z.object({
-  chords: z.array(z.string().trim().min(1).max(16)).min(3).max(8),
+  chords: z.array(z.string().trim().min(1).max(16)).min(3).max(6),
 }).strict();
 
 export type ProgressionCard = {

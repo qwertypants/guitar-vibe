@@ -40,7 +40,7 @@ test("real VexChords renders open and higher C positions and replaces the select
   expect(container.querySelector("details")).toBeNull();
   expect(screen.getByLabelText("Chord details")).toHaveTextContent("C3E3G3C4E4");
   const openSvg = container.querySelector("svg");
-  expect(openSvg).toHaveAttribute("viewBox", "0 0 240 280");
+  expect(openSvg).toHaveAttribute("viewBox", "0 0 320 373");
   expect(openSvg?.querySelectorAll("circle").length).toBeGreaterThan(0);
   rerender(<ChordNotation voicing={higher} onPlay={() => {}} />);
   await waitFor(() => {

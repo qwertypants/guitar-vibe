@@ -15,15 +15,14 @@ type GenerationOptions = { model?: string; baseUrl?: string; seed?: number; sign
 const MAX_RESPONSE_BYTES = 64 * 1024;
 const DEADLINE_MS = 30_000;
 const chordSymbols = SUPPORTED_CHORDS.map(({ symbol }) => symbol);
-const outputSchema = z.object({ chords: z.array(z.enum(chordSymbols)).min(3).max(8) }).strict();
+const outputSchema = z.object({ chords: z.array(z.enum(chordSymbols)).min(3).max(6) }).strict();
 export const LOCAL_MODEL_PROMPT_TEMPLATE = [
   "Create a coherent, playable guitar chord progression inspired by these selected vibes:",
   "{selected vibe labels}",
-  "Choose a single tonal center and keep every chord within the same major or natural-minor scale, except when the selected style explicitly calls for another rule.",
-  "For melancholy or dark moods, use a minor tonal center; for joyful or hopeful moods, use a major tonal center and begin on a major chord.",
-  "For jazz or neo-soul, include sevenths while keeping the chords in one key. For folk or pop, favor triads and avoid sevenths.",
-  "For blues, choose any tonic and use only dominant-7 chords on its I, IV, and V roots.",
-  "Prefer approachable harmony and smooth voice-leading. Return only the required JSON with 3 to 8 supported chord symbols and at least two distinct chords.",
+  "Return 3 to 6 chord symbols, with at least two distinct chords. Use one tonal center and common diatonic triads or seventh chords; at least 75% of chords should fit one major or minor scale.",
+  "Mood and genre are style cues, not universal theory rules. Use them to guide character while keeping the harmony coherent.",
+  "A minor-key dominant seventh on scale degree V may resolve to minor i as a harmonic-minor V7-to-i cadence. Blues may use a major pattern of dominant-7 I, IV, and V, or a minor pattern of minor-7 i and iv with dominant-7 V.",
+  "Prefer smooth guitar voice leading. Return only the required JSON using symbols from the supported chord catalog; the app supplies playable guitar voicings.",
 ].join("\n");
 export function buildLocalModelPrompt(labels: readonly string[]) {
   return LOCAL_MODEL_PROMPT_TEMPLATE.replace("{selected vibe labels}", labels.join("\n"));
@@ -92,7 +91,7 @@ export async function generateLocalProgression(vibeIds: readonly string[], optio
         think: false,
         keep_alive: "5m",
         options: { temperature: 0.2, num_ctx: 2048, num_predict: 128, ...(options.seed === undefined ? {} : { seed: options.seed }) },
-        format: { type: "object", properties: { chords: { type: "array", items: { type: "string", enum: chordSymbols }, minItems: 3, maxItems: 8 } }, required: ["chords"], additionalProperties: false },
+        format: { type: "object", properties: { chords: { type: "array", items: { type: "string", enum: chordSymbols }, minItems: 3, maxItems: 6 } }, required: ["chords"], additionalProperties: false },
         messages: [{ role: "user", content: buildLocalModelPrompt(labels) }],
       }),
     }));

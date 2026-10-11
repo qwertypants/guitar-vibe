@@ -6,22 +6,38 @@ export type Sample = { phase: "first-request" | "discarded-warmup" | "scored"; c
 export function scoreProgression(fixture: EvalCase, chords: readonly string[]): Score {
   const parsed = progressionSchema.safeParse({ chords });
   const resolved = parsed.success ? resolveProgression(parsed.data.chords) : null;
-  const valid = resolved !== null && chords.length >= 3 && chords.length <= 8 && new Set(chords).size >= 2;
-  if (!valid) return { valid: false, coherent: false, proxyPass: false, reasons: ["Requires 3-8 supported playable chords and at least two distinct chords."] };
+  const valid = resolved !== null && chords.length >= 3 && chords.length <= 6 && new Set(chords).size >= 2;
+  if (!valid) return { valid: false, coherent: false, proxyPass: false, reasons: ["Requires 3-6 supported playable chords and at least two distinct chords."] };
   const catalog = chords.map(symbol => SUPPORTED_CHORDS.find(c => c.symbol === symbol));
   if (catalog.some(c => !c)) return {valid: false, coherent: false, proxyPass: false, reasons: ["Canonical catalog symbol required."]};
   const known = catalog.filter(c => c !== undefined);
-  const blues = known.some(tonic => {
+  const majorBlues = known.some(tonic => {
     const roots = [tonic.pitchClass, (tonic.pitchClass + 5) % 12, (tonic.pitchClass + 7) % 12];
     return known.every(c => c.suffix === "7" && roots.includes(c.pitchClass)) && roots.every(root => known.some(c => c.pitchClass === root));
   });
-  const scaleShare = Math.max(...Array.from({length: 12}, (_, tonic) => {
-    // Natural minor has the same pitch-class sets as relative major.
-    const scale = [0, 2, 4, 5, 7, 9, 11].map(i => (i + tonic) % 12);
-    return known.filter(c => CHORD_INTERVALS[c.suffix].every(i => scale.includes((i + c.pitchClass) % 12))).length / known.length;
-  }));
-  const coherent = fixture.expectations.includes("blues") ? blues : scaleShare >= 0.75;
-  const reasons = [fixture.expectations.includes("blues") ? `Blues I-IV-V dominant relationship: ${blues}.` : `Common major/natural-minor scale chord share: ${scaleShare.toFixed(3)}; requires >=0.75.`];
+  const minorBlues = known.some(tonic => {
+    const roots = [tonic.pitchClass, (tonic.pitchClass + 5) % 12, (tonic.pitchClass + 7) % 12];
+    return known.every(c => roots.includes(c.pitchClass) &&
+      (c.pitchClass === tonic.pitchClass || c.pitchClass === (tonic.pitchClass + 5) % 12 ? c.suffix === "m7" : c.suffix === "7")) &&
+      roots.every(root => known.some(c => c.pitchClass === root));
+  });
+  const blues = majorBlues || minorBlues;
+  const harmonicMinorCadence = known.some((chord, index) => {
+    const next = known[(index + 1) % known.length];
+    return chord.suffix === "7" && next !== undefined &&
+      next.pitchClass === (chord.pitchClass + 5) % 12 && (next.suffix === "m" || next.suffix === "m7");
+  });
+  const scales = Array.from({length: 12}, (_, tonic) => {
+    const major = [0, 2, 4, 5, 7, 9, 11];
+    const minor = [0, 2, 3, 5, 7, 8, 10];
+    const harmonicMinor = [0, 2, 3, 5, 7, 8, 11];
+    return [major, minor, harmonicMinor].map(intervals => intervals.map(i => (i + tonic) % 12));
+  }).flat();
+  const scaleShare = Math.max(...scales.map(scale =>
+    known.filter(c => CHORD_INTERVALS[c.suffix].every(i => scale.includes((i + c.pitchClass) % 12))).length / known.length
+  ));
+  const coherent = fixture.expectations.includes("blues") ? blues : scaleShare >= 0.75 || harmonicMinorCadence;
+  const reasons = [fixture.expectations.includes("blues") ? `Major or minor I-IV-V blues relationship: ${blues}.` : `Common major/minor scale chord share: ${scaleShare.toFixed(3)}; requires >=0.75, or harmonic-minor V7-to-i: ${harmonicMinorCadence}.`];
   const expectations = fixture.expectations.map(expectation => {
     let pass: boolean;
     switch (expectation) {

@@ -22,6 +22,18 @@ describe("musical proxies", () => {
   it("checks I-IV-V dominant roots, not just sevenths", () => {
     expect(scoreProgression(blues, ["A7", "D7", "E7"]).proxyPass).toBe(true);
     expect(scoreProgression(blues, ["A7", "C7", "E7"]).proxyPass).toBe(false);
+    expect(scoreProgression(blues, ["Am7", "Dm7", "E7"]).proxyPass).toBe(true);
+    expect(scoreProgression(blues, ["Am7", "D7", "E7"]).proxyPass).toBe(false);
+    expect(scoreProgression(blues, ["Am7", "Dm7", "F7"]).proxyPass).toBe(false);
+  });
+  it("accepts a harmonic-minor V7-to-i cadence", () => {
+    expect(scoreProgression(melancholy, ["Am", "Dm", "E7", "Am"])).toMatchObject({ coherent: true, proxyPass: true });
+  });
+  it("enforces the inclusive three-to-six chord range", () => {
+    expect(scoreProgression(melancholy, ["Am", "F", "G"]).valid).toBe(true);
+    expect(scoreProgression(melancholy, ["Am", "F", "G", "Dm", "Em", "C"]).valid).toBe(true);
+    expect(scoreProgression(melancholy, ["Am", "F"]).valid).toBe(false);
+    expect(scoreProgression(melancholy, ["Am", "F", "G", "Dm", "Em", "C", "Am"]).valid).toBe(false);
   });
   it("checks all chord pitch classes for tonal coherence", () => {
     expect(scoreProgression(melancholy, ["Am", "F#", "C#", "D#"]).coherent).toBe(false);

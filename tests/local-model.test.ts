@@ -28,6 +28,7 @@ describe("local generation", () => {
     expect(body).toMatchObject({ model: "qwen2.5:1.5b", stream: false, think: false, keep_alive: "5m",
       options: { temperature: 0.2, num_ctx: 2048, num_predict: 128, seed: 42 } });
     expect(body.format.properties.chords.items.enum).toEqual(SUPPORTED_CHORDS.map(({ symbol }) => symbol));
+    expect(body.format.properties.chords).toMatchObject({ minItems: 3, maxItems: 6 });
     expect(body.messages.map((message: { content: string }) => message.content).join(" ")).toContain("Melancholy");
   });
   it("gives explicit tonal and genre constraints without prescribing chord sequences", async () => {
@@ -36,10 +37,11 @@ describe("local generation", () => {
     const [, init] = network.mock.calls[0]!;
     const body = JSON.parse(String(init?.body));
     const prompt = body.messages.map((message: { content: string }) => message.content).join("\n");
-    expect(prompt).toMatch(/single tonal center/i);
-    expect(prompt).toMatch(/keep every chord within the same major or natural-minor scale/i);
-    expect(prompt).toMatch(/For blues, choose any tonic and use only dominant-7 chords on its I, IV, and V roots/i);
-    expect(prompt).toMatch(/For folk or pop, favor triads and avoid sevenths/i);
+    expect(prompt).toMatch(/one tonal center/i);
+    expect(prompt).toMatch(/at least 75% of chords should fit one major or minor scale/i);
+    expect(prompt).toMatch(/harmonic-minor V7-to-i/i);
+    expect(prompt).toMatch(/major pattern of dominant-7 I, IV, and V, or a minor pattern/i);
+    expect(prompt).toMatch(/app supplies playable guitar voicings/i);
     expect(prompt).not.toMatch(/Am7.*Dm7.*G7/i);
   });
   it.each([[], ["unknown"], ["mood-dark", "mood-dark"], ["mood-dark", "mood-joyful"], Array(6).fill("genre-jazz")])("rejects invalid selection %j before inference", async (selection) => {
@@ -59,7 +61,7 @@ describe("local generation", () => {
     expect(network).not.toHaveBeenCalled();
   });
   it.each(["not json", "```json\n{}\n```", JSON.stringify({ chords: "Am" }), JSON.stringify({ chords: ["Am", "C"] }),
-    JSON.stringify({ chords: Array(9).fill("Am") }), JSON.stringify({ chords: ["Am", "C", "G13"] }),
+    JSON.stringify({ chords: Array(2).fill("Am") }), JSON.stringify({ chords: Array(7).fill("Am") }), JSON.stringify({ chords: ["Am", "C", "G13"] }),
     JSON.stringify({ chords: ["Am", "Am", "Am"] }), JSON.stringify({ chords: [" Am", "C", "G"] }),
     JSON.stringify({ chords, voicings: [] })])("rejects malformed or invalid model content %s", async (content) => {
     network.mockResolvedValue(Response.json(envelope(content)));
@@ -67,6 +69,11 @@ describe("local generation", () => {
     await expect(result).rejects.toBeInstanceOf(LocalModelError);
     await expect(result).rejects.toMatchObject({ code: "invalid_output" });
     expect(network).toHaveBeenCalledOnce();
+  });
+  it.each([3, 6])("accepts inclusive %i chord outputs", async (count) => {
+    const validChords = Array.from({ length: count }, (_, index) => ["Am", "C", "G", "F", "Dm", "Em"][index]!);
+    network.mockResolvedValue(Response.json(envelope(JSON.stringify({ chords: validChords }))));
+    await expect(generateLocalProgression(ids)).resolves.toMatchObject({ chords: validChords });
   });
   it.each([{ done: false }, { done_reason: "length" }, { message: { content: "{}" } }, { eval_count: -1 }])("rejects incomplete/invalid envelope %j", async (extra) => {
     network.mockResolvedValue(Response.json(envelope(undefined, extra)));

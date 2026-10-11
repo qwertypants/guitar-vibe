@@ -50,7 +50,7 @@ export function ChordNotation({ voicing, onPlay }: { voicing: ChordVoicing; onPl
         <span className="block text-sm text-muted">{voicing.label}</span>
       </figcaption>
       <button type="button" onClick={onPlay} aria-label={`Play ${voicing.chord}, ${voicing.label}`}
-        className="chord-diagram-button mx-auto block w-full max-w-[240px] rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+        className="chord-diagram-button mx-auto block w-full max-w-[320px] rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
         <div ref={host} aria-hidden="true" className="chord-diagram flex justify-center" />
       </button>
       {failedVoicing === voicing && <p role="alert">Chord diagram is unavailable for this position. Use the frets and notes below.</p>}

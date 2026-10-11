@@ -18,39 +18,12 @@ export function VibeChooser() {
   const [generatedSelection, setGeneratedSelection] = useState<VibeSelection>({});
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [moreOpen, setMoreOpen] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const choosePanel = useRef<HTMLDivElement>(null);
   const playPanel = useRef<HTMLDivElement>(null);
   const transition = useRef<gsap.core.Tween | null>(null);
   const lastView = useRef(view);
-  const menu = useRef<HTMLDivElement>(null);
-  const moreButton = useRef<HTMLButtonElement>(null);
-  const helpDialog = useRef<HTMLDialogElement>(null);
-  const closingMenu = useRef(false);
-
-  const closeMore = (after?: () => void) => {
-    if (closingMenu.current) return;
-    const panel = menu.current?.querySelector<HTMLElement>('[role="menu"]');
-    if (!panel || reducedMotion()) {
-      setMoreOpen(false);
-      after?.();
-      return;
-    }
-    closingMenu.current = true;
-    gsap.to(panel, { autoAlpha: 0, y: -16, scale: 0.94, duration: 0.18, ease: "power2.in",
-      onComplete: () => { closingMenu.current = false; setMoreOpen(false); after?.(); } });
-  };
-
-  useGSAP(() => {
-    const panel = menu.current?.querySelector<HTMLElement>('[role="menu"]');
-    if (!moreOpen || !panel || reducedMotion()) return;
-    gsap.fromTo(panel, { autoAlpha: 0, y: -18, scale: 0.92 },
-      { autoAlpha: 1, y: 0, scale: 1, duration: 0.34, ease: "back.out(1.6)" });
-  }, { scope: root, dependencies: [moreOpen], revertOnUpdate: true });
-
   useGSAP(() => {
     if (!pending || reducedMotion()) return;
     const icon = root.current?.querySelector<SVGElement>("[data-generate] svg");
@@ -150,69 +123,7 @@ export function VibeChooser() {
     setSelection(next);
     setError(null);
   };
-
-  useEffect(() => {
-    if (!moreOpen) return;
-    const dismiss = (event: PointerEvent) => {
-      if (event.target instanceof Node && !menu.current?.contains(event.target)) closeMore();
-    };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        moreButton.current?.focus();
-        closeMore();
-      }
-    };
-    document.addEventListener("pointerdown", dismiss);
-    document.addEventListener("keydown", escape);
-    return () => {
-      document.removeEventListener("pointerdown", dismiss);
-      document.removeEventListener("keydown", escape);
-    };
-  }, [moreOpen]);
-
-  useEffect(() => {
-    if (!helpOpen || !helpDialog.current) return;
-    const dialog = helpDialog.current;
-    const previousOverflow = document.body.style.overflow;
-    dialog.showModal();
-    document.body.style.overflow = "hidden";
-    if (!reducedMotion()) gsap.fromTo(dialog, { autoAlpha: 0, y: 32, scale: 0.88, rotationX: -12 },
-      { autoAlpha: 1, y: 0, scale: 1, rotationX: 0, duration: 0.5, ease: "back.out(1.5)" });
-    return () => {
-      gsap.killTweensOf(dialog);
-      gsap.set(dialog, { clearProps: "opacity,visibility,transform" });
-      if (dialog.open) dialog.close();
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [helpOpen]);
-
-  const closeHelp = () => {
-    const dialog = helpDialog.current;
-    if (!dialog || reducedMotion()) {
-      if (dialog?.open) dialog.close();
-      setHelpOpen(false);
-      moreButton.current?.focus();
-      return;
-    }
-    gsap.to(dialog, { autoAlpha: 0, y: -20, scale: 0.94, duration: 0.2, ease: "power2.in",
-      onComplete: () => { dialog.close(); setHelpOpen(false); moreButton.current?.focus(); } });
-  };
-
-  const focusMenuItem = (index: number) => {
-    const items = menu.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)');
-    items?.[index]?.focus();
-  };
-
-  const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
-    event.preventDefault();
-    const items = Array.from(menu.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)') ?? []);
-    const index = items.findIndex((item) => item === document.activeElement);
-    if (event.key === "Home") items[0]?.focus();
-    if (event.key === "End") items[items.length - 1]?.focus();
-    if (event.key === "ArrowDown") items[(index + 1) % items.length]?.focus();
-    if (event.key === "ArrowUp") items[(index + items.length - 1) % items.length]?.focus();
-  };
+  const summarySelection = view === "play" ? generatedSelection : selection;
 
   const generate = async () => {
     setPending(true);
@@ -255,29 +166,10 @@ export function VibeChooser() {
     <div ref={root} className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <h2 data-intro className="text-2xl">Find your sound</h2>
-        <div ref={menu} className="relative">
-          <button data-intro ref={moreButton} type="button" aria-label="More" aria-expanded={moreOpen} aria-haspopup="menu"
-            onClick={() => moreOpen ? closeMore() : setMoreOpen(true)}
-            onKeyDown={(event) => {
-              if (event.key === "ArrowDown") {
-                event.preventDefault();
-                setMoreOpen(true);
-                requestAnimationFrame(() => focusMenuItem(0));
-              }
-            }}
-            className="inline-flex min-h-11 items-center gap-2 rounded-md border border-foreground/20 bg-card px-3 py-2 text-sm">
-            <UiIcon name="more" /> More
-          </button>
-          {moreOpen && <div role="menu" aria-label="More options" onKeyDown={handleMenuKeyDown}
-            className="absolute right-0 z-10 mt-2 flex min-w-44 flex-col gap-2 rounded-lg border border-foreground/20 bg-card p-1 shadow-lg">
-            <button type="button" role="menuitem" onClick={() => closeMore(() => setHelpOpen(true))}
-              className="block min-h-11 w-full rounded-md px-3 py-2 text-left text-sm hover:bg-accent/10">How to play</button>
-            <button type="button" role="menuitem" disabled={pending} onClick={() => {
-              choose({});
-              closeMore(() => moreButton.current?.focus());
-            }} className="block min-h-11 w-full rounded-md px-3 py-2 text-left text-sm hover:bg-accent/10 disabled:opacity-50">Reset selection</button>
-          </div>}
-        </div>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted">{getSelectedVibes(summarySelection).map((vibe) => vibe.label).join(" · ") || "No vibes selected"}</p>
+        <button type="button" disabled={pending} className="min-h-11 rounded-full border border-foreground/20 px-4 text-sm disabled:opacity-50" onClick={() => choose({})}>Reset selection</button>
       </div>
       <Tabs label="Workspace" items={[{ id: "choose", label: "Choose vibe" }, { id: "play", label: "Play", disabled: !progression || transitioning }]} value={view} onChange={switchView}>
         <div ref={choosePanel} hidden={view !== "choose"} className="space-y-5">
@@ -296,27 +188,12 @@ export function VibeChooser() {
         {error && <p role="alert" className="text-sm">{error}</p>}
         </div>
         {progression && <div ref={playPanel} hidden={view !== "play"} className="space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted">{getSelectedVibes(generatedSelection).map((vibe) => vibe.label).join(" · ")}</p>
+          <div className="flex justify-end">
             <button type="button" className="min-h-11 rounded-full border border-foreground/20 px-4 text-sm" onClick={() => switchView("choose")}>Edit vibe</button>
           </div>
           <ProgressionResult key={JSON.stringify(progression)} chords={progression} active={view === "play" && !transitioning} />
         </div>}
       </Tabs>
-      {helpOpen && <dialog ref={helpDialog} aria-labelledby="help-title" onCancel={(event) => {
-        event.preventDefault();
-        closeHelp();
-      }}
-        className="w-[min(28rem,calc(100vw-2rem))] rounded-xl border border-foreground/20 bg-card p-6 text-foreground shadow-xl">
-        <div className="flex items-start justify-between gap-3">
-          <h2 id="help-title" className="text-2xl">How to play</h2>
-          <button type="button" aria-label="Close help" onClick={closeHelp}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-md border border-foreground/20"><UiIcon name="close" /></button>
-        </div>
-        <p className="mt-3 text-sm text-muted">Pick a mood and any details you like, then generate a chord progression. Press a diagram or guitar position to hear a chord, or play the full progression.</p>
-        <button type="button" onClick={closeHelp}
-          className="mt-5 min-h-11 rounded-md bg-accent px-5 py-2 text-sm font-medium text-accent-foreground">Done</button>
-      </dialog>}
     </div>
   );
 }

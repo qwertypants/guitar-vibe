@@ -44,7 +44,7 @@ button:not(:disabled):hover {
 }
 
 .chord-diagram > div {
-  width: 240px;
+  width: 320px;
   max-width: 100%;
 }
 
@@ -66,9 +66,6 @@ button:not(:disabled):hover {
   }
 }
 
-@media (min-width: 1280px) {
-  .progression-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;

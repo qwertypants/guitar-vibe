@@ -5,12 +5,6 @@ import Home from "@/app/page";
 
 beforeEach(() => {
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
-  HTMLDialogElement.prototype.showModal = function () {
-    this.setAttribute("open", "");
-  };
-  HTMLDialogElement.prototype.close = function () {
-    this.removeAttribute("open");
-  };
 });
 afterEach(() => {
   vi.restoreAllMocks();
@@ -29,53 +23,49 @@ test("the landing page keeps explicit generation after visible selection", () =>
   expect(fetch).not.toHaveBeenCalled();
 });
 
-test("Reset clears selection and errors through the existing selection path", async () => {
+test("More and help are absent", () => {
+  render(<Home />);
+  expect(screen.queryByRole("button", { name: "More" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+});
+
+test("Reset clears the selection and a generation error", async () => {
   vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: false, json: async () => ({ error: "Generation failed" }) } as Response);
   render(<Home />);
-  fireEvent.click(screen.getByRole("button", { name: "Moody", pressed: false }));
+  fireEvent.click(screen.getByRole("button", { name: "Moody" }));
   fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
   expect(await screen.findByRole("alert")).toHaveTextContent("Generation failed");
-  fireEvent.click(screen.getByRole("button", { name: "More" }));
-  fireEvent.click(screen.getByRole("menuitem", { name: "Reset selection" }));
+  fireEvent.click(screen.getByRole("button", { name: "Reset selection" }));
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(screen.queryByRole("status", { name: "Selected vibes" })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Generate progression" })).toBeDisabled();
 });
 
-test("More menu supports Escape and Help restores focus", () => {
+test("Reset clears selection while keeping an existing progression", async () => {
+  const chords = resolveProgression(["C", "Am", "G"]);
+  if (!chords) throw new Error("Missing progression fixture");
+  vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ chords })));
   render(<Home />);
-  const more = screen.getByRole("button", { name: "More" });
-  fireEvent.click(more);
-  expect(screen.getByRole("menu", { name: "More options" })).toBeVisible();
-  fireEvent.keyDown(document, { key: "Escape" });
-  expect(screen.queryByRole("menu")).not.toBeInTheDocument();
-  expect(more).toHaveFocus();
-  fireEvent.click(more);
-  const menu = screen.getByRole("menu");
-  screen.getByRole("menuitem", { name: "How to play" }).focus();
-  fireEvent.keyDown(menu, { key: "ArrowDown" });
-  expect(screen.getByRole("menuitem", { name: "Reset selection" })).toHaveFocus();
-  fireEvent.keyDown(menu, { key: "Home" });
-  expect(screen.getByRole("menuitem", { name: "How to play" })).toHaveFocus();
-  fireEvent.click(screen.getByRole("menuitem", { name: "How to play" }));
-  expect(screen.getByRole("dialog", { name: "How to play" })).toHaveAttribute("open");
-  expect(document.body.style.overflow).toBe("hidden");
-  fireEvent(screen.getByRole("dialog"), new Event("cancel", { cancelable: true }));
-  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  expect(more).toHaveFocus();
-  expect(document.body.style.overflow).toBe("");
+  fireEvent.click(screen.getByRole("button", { name: "Moody" }));
+  fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
+  await waitFor(() => expect(screen.getByRole("tab", { name: "Play", selected: true })).toBeVisible());
+  fireEvent.click(screen.getByRole("button", { name: "Reset selection" }));
+  fireEvent.click(screen.getByRole("tab", { name: "Choose vibe" }));
+  expect(screen.getByRole("button", { name: "Generate another" })).toBeDisabled();
+  fireEvent.click(screen.getByRole("tab", { name: "Play" }));
+  expect(screen.getByRole("heading", { name: "Your chord progression" })).toBeVisible();
+  expect(screen.getByText("Moody", { exact: true, selector: "p" })).toBeVisible();
 });
 
 test("Reset stays disabled while a generation request is pending", async () => {
   let resolveRequest: ((value: Response) => void) | undefined;
-  vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise<Response>((resolve) => { resolveRequest = resolve; }));
+  vi.spyOn(globalThis, "fetch").mockImplementationOnce(() => new Promise<Response>((resolve) => { resolveRequest = resolve; }));
   render(<Home />);
   fireEvent.click(screen.getByRole("button", { name: "Moody", pressed: false }));
   fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
-  fireEvent.click(screen.getByRole("button", { name: "More" }));
-  expect(screen.getByRole("menuitem", { name: "Reset selection" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Reset selection" })).toBeDisabled();
   resolveRequest?.({ ok: false, json: async () => ({ error: "Try again" }) } as Response);
-  await waitFor(() => expect(screen.getByRole("menuitem", { name: "Reset selection" })).toBeEnabled());
+  await waitFor(() => expect(screen.getByRole("button", { name: "Reset selection" })).toBeEnabled());
 });
 
 

@@ -211,7 +211,7 @@ helpers remain free of environment reads and browser side effects.
 
 The browser posts known vibe IDs to the server. The server limits each model
 request to one bounded generation with a 2,048-token context and 128 generated
-tokens, validates 3-8 chord symbols and supplies trusted local voicings and audio.
+tokens, validates 3-6 chord symbols and supplies trusted local voicings and audio.
 No environment value uses a `NEXT_PUBLIC_` prefix.
 
 Existing asset license files remain with their assets. This document does not
