@@ -35,5 +35,12 @@ export async function renderChordNotation(element: HTMLElement, voicing: ChordVo
     fontFamily: "Arial, sans-serif",
   });
   diagram.draw(voicingToVexChords(voicing));
-  element.querySelector("svg")?.setAttribute("viewBox", "0 0 320 373");
+  const svg = element.querySelector("svg");
+  if (svg) {
+    const content = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    content.setAttribute("transform", "translate(-12.8 0) scale(1.08 1)");
+    while (svg.firstChild) content.append(svg.firstChild);
+    svg.append(content);
+    svg.setAttribute("viewBox", "0 0 320 373");
+  }
 }
