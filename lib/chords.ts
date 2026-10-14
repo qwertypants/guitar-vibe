@@ -2,7 +2,7 @@ export const CHORD_ROOTS = [
   "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
 ] as const;
 
-export const CHORD_SUFFIXES = ["", "m", "7", "maj7", "m7"] as const;
+export const CHORD_SUFFIXES = ["", "m", "7", "maj7", "m7", "sus2", "sus4"] as const;
 export type ChordRoot = (typeof CHORD_ROOTS)[number];
 export type ChordSuffix = (typeof CHORD_SUFFIXES)[number];
 export type SupportedChordSymbol = `${ChordRoot}${ChordSuffix}`;
@@ -18,6 +18,8 @@ export const CHORD_INTERVALS = {
   "7": [0, 4, 7, 10],
   maj7: [0, 4, 7, 11],
   m7: [0, 3, 7, 10],
+  sus2: [0, 2, 7],
+  sus4: [0, 5, 7],
 } as const satisfies Record<ChordSuffix, readonly number[]>;
 
 export const SUPPORTED_CHORDS = CHORD_ROOTS.flatMap((root, pitchClass) =>
@@ -30,7 +32,7 @@ export const SUPPORTED_CHORDS = CHORD_ROOTS.flatMap((root, pitchClass) =>
 /** A closed allowlist, including flat/sharp enharmonics. No slash chords or extensions. */
 export function parseChordSymbol(input: unknown): SupportedChordSymbol | null {
   if (typeof input !== "string") return null;
-  const match = /^([A-G])([#b]?)(maj7|m7|m|7)?$/.exec(
+  const match = /^([A-G])([#b]?)(maj7|m7|sus2|sus4|m|7)?$/.exec(
     input.trim().replaceAll("♯", "#").replaceAll("♭", "b"),
   );
   if (!match) return null;
