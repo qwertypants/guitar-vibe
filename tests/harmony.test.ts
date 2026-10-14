@@ -11,6 +11,11 @@ describe("assessProgressionHarmony", () => {
     expect(assessProgressionHarmony(["Am7", "Dm7", "E7"]).blues).toBe(true);
   });
 
+  it("uses blues root coherence only when the selected vibe allows blues", () => {
+    expect(assessProgressionHarmony(["E7", "A7", "B7"]).coherent).toBe(false);
+    expect(assessProgressionHarmony(["E7", "A7", "B7"], true).coherent).toBe(true);
+  });
+
   it("accepts a harmonic-minor dominant-to-tonic cadence", () => {
     const result = assessProgressionHarmony(["E7", "Am"]);
     expect(result.harmonicMinorCadence).toBe(true);

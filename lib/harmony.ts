@@ -16,7 +16,7 @@ const SCALES = Array.from({ length: 12 }, (_, tonic) => {
   return modes.map((intervals) => new Set(intervals.map((interval) => (interval + tonic) % 12)));
 }).flat();
 
-export function assessProgressionHarmony(chords: readonly string[]): HarmonyAssessment {
+export function assessProgressionHarmony(chords: readonly string[], allowBlues = false): HarmonyAssessment {
   const known = chords.map((symbol) => SUPPORTED_CHORDS.find((chord) => chord.symbol === symbol));
   if (known.length === 0 || known.some((chord) => !chord)) {
     return { coherent: false, scaleShare: 0, blues: false, harmonicMinorCadence: false };
@@ -46,7 +46,7 @@ export function assessProgressionHarmony(chords: readonly string[]): HarmonyAsse
       scale.has((interval + chord.pitchClass) % 12))).length / catalog.length,
   ));
   return {
-    coherent: blues || scaleShare >= 0.75 || harmonicMinorCadence,
+    coherent: (allowBlues && blues) || scaleShare >= 0.75 || harmonicMinorCadence,
     scaleShare,
     blues,
     harmonicMinorCadence,

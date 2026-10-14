@@ -9,7 +9,7 @@ import { join } from "node:path";
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 const melancholy = { id: "sad", vibeIds: ["mood-melancholy"], expectations: ["minor"], holdout: false } as const;
 const blues = { ...melancholy, id: "blues", expectations: ["blues"] } as const;
-const sample = (chords: string[], caseId = "sad", wallMs = 10): Sample => ({ kind: "accepted", phase: "scored", caseId, seed: 42, chords, metrics: { wallMs, loadMs: 1, generationMs: 2, promptTokens: 20, outputTokens: 10 }, score: scoreProgression(melancholy, chords) });
+const sample = (chords: string[], caseId = "sad", wallMs = 10): Sample => ({ kind: "accepted", phase: "scored", caseId, seed: 42, variation: "familiar", requestedCandidates: 3, usableCandidates: 2, chords, metrics: { wallMs, loadMs: 1, generationMs: 2, promptTokens: 20, outputTokens: 10, requestedCandidates: 3, usableCandidates: 2 }, score: scoreProgression(melancholy, chords) });
 describe("musical proxies", () => {
   it("rejects unsupported and unvaried progressions", () => {
     expect(scoreProgression(melancholy, ["Am", "wat", "G"]).valid).toBe(false);
@@ -43,7 +43,7 @@ describe("aggregation", () => {
   it("does not crown empty, failed, or identical-output runs", () => {
     expect(aggregate("empty", [], null).passes).toBe(false);
     expect(aggregate("same", CASES.map(c => sample(["Am", "F", "G"], c.id)), null).passes).toBe(false);
-    const failed: Sample = { kind: "failed", phase: "scored", caseId: "sad", seed: 42, error: "timeout", wallMs: 30_000 };
+    const failed: Sample = { kind: "failed", phase: "scored", caseId: "sad", seed: 42, variation: "familiar", requestedCandidates: 3, usableCandidates: 0, error: "timeout", wallMs: 30_000 };
     const result = aggregate("bad", [sample(["Am", "F", "G"]), failed], null);
     expect(result.validRate).toBe(0.5);
     expect(result.proxyPassRate).toBe(0.5);
@@ -70,6 +70,9 @@ describe("CLI and execution", () => {
   });
   it("parses explicit models, repetitions, output", () => {
     expect(parseArgs(["--models", "qwen2.5:1.5b", "--runs", "2", "--out", "/tmp/eval.json"])).toEqual({ models: ["qwen2.5:1.5b"], runs: 2, out: "/tmp/eval.json" });
+    expect(parseArgs([]).variation).toBe("familiar");
+    expect(parseArgs(["--variation", "adventurous"]).variation).toBe("adventurous");
+    expect(() => parseArgs(["--variation", "unknown"])).toThrow();
   });
   it("defaults to the reviewed five-model shortlist in stable order", () => {
     expect(parseArgs([]).models).toEqual([
@@ -81,17 +84,20 @@ describe("CLI and execution", () => {
     ]);
   });
   it("records failed requests, runs sequentially, and uses matching fixed seeds", async () => {
-    let active = 0; const calls: {model?: string; seed?: number}[] = [];
-    const generate = vi.fn(async (_ids: readonly string[], options: { model?: string; seed?: number } = {}) => {
+    let active = 0; const calls: {model?: string; seed?: number; variation?: string}[] = [];
+    const generate = vi.fn(async (_ids: readonly string[], options: { model?: string; seed?: number; variation?: string } = {}) => {
       expect(active++).toBe(0); calls.push(options); await Promise.resolve(); active--;
       if (options.model === "missing") throw new Error("unavailable");
-      return { chords: ["Am", "F", "G"], metrics: {wallMs: 1, loadMs: 0, generationMs: 1, promptTokens: 1, outputTokens: 1} };
+      return { chords: ["Am", "F", "G"], metrics: {wallMs: 1, loadMs: 0, generationMs: 1, promptTokens: 1, outputTokens: 1, requestedCandidates: 3, usableCandidates: 2} };
     });
     const inspect = vi.fn(async () => ({ error: "offline" }));
-    const result = await runBenchmark({ models: ["missing", "good"], runs: 2, out: "/tmp/unused" }, { generate, inspect });
+    const result = await runBenchmark({ models: ["missing", "good"], runs: 2, out: "/tmp/unused", variation: "richer" }, { generate, inspect });
     expect(result.models[0]?.samples).toHaveLength(CASES.length * 2 + 2);
     expect(result.models[0]?.summary.validRate).toBe(0);
     expect(calls.filter(c => c.model === "missing").map(c => c.seed)).toEqual(calls.filter(c => c.model === "good").map(c => c.seed));
+    expect(calls.every(c => c.variation === "richer")).toBe(true);
+    expect(result.models[1]?.samples[2]).toMatchObject({variation: "richer", requestedCandidates: 3, usableCandidates: 2});
+    expect(result.models[1]?.summary).toMatchObject({requestedCandidateCount: CASES.length * 2 * 3, usableCandidateCount: CASES.length * 2 * 2});
     expect(result.winner).toBe(null);
   });
 });
@@ -102,9 +108,9 @@ describe("real adapter boundary and metadata", () => {
       if (new URL(url).pathname === "/api/version") return Response.json({version: "0.40.2"});
       return Response.json({});
     }));
-    const generate = vi.fn(async () => ({chords: ["Am", "F", "G"], metrics: {wallMs: 1, loadMs: 0, generationMs: 1, promptTokens: 1, outputTokens: 1}}));
+    const generate = vi.fn(async () => ({chords: ["Am", "F", "G"], metrics: {wallMs: 1, loadMs: 0, generationMs: 1, promptTokens: 1, outputTokens: 1, requestedCandidates: 3, usableCandidates: 1}}));
     const inspect = vi.fn(async () => ({error: "not needed"}));
-    const report = await runBenchmark({models: ["qwen2.5:1.5b"], runs: 1, out: "/tmp/unused"}, {generate, inspect});
+    const report = await runBenchmark({models: ["qwen2.5:1.5b"], runs: 1, out: "/tmp/unused", variation: "familiar"}, {generate, inspect});
     expect(report.ollama.version).toBe("0.40.2");
     expect(report.prompt.templateSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(report.prompt.templateSha256).toBe(
@@ -118,9 +124,9 @@ describe("real adapter boundary and metadata", () => {
       if (path === "/api/tags") return Response.json({models: [{name: "qwen2.5:latest", digest: "sha256:canonical", size: 123}]});
       if (path === "/api/show") return Response.json({});
       if (path === "/api/ps") return Response.json({models: [{name: "qwen2.5:latest", digest: "sha256:canonical", size: 456, size_vram: 300}]});
-      return Response.json({message: {role: "assistant", content: JSON.stringify({chords: ["Am", "F", "G"]})}, done: true, done_reason: "stop"});
+      return Response.json({message: {role: "assistant", content: JSON.stringify({candidates: [{chords: ["Am", "F", "G"]}]})}, done: true, done_reason: "stop"});
     }));
-    const result = await runBenchmark({models: ["qwen2.5"], runs: 1, out: "/tmp/unused"});
+    const result = await runBenchmark({models: ["qwen2.5"], runs: 1, out: "/tmp/unused", variation: "familiar"});
     const model = result.models[0];
     const metadata = {
       installed: {name: "qwen2.5:latest", digest: "sha256:canonical", size: 123},
@@ -140,16 +146,24 @@ describe("real adapter boundary and metadata", () => {
       if (path === "/api/tags") return Response.json({models: [{name: "qwen2.5:1.5b", digest: "sha256:exact", size: 123, details: {parameter_size: "1.5B", quantization_level: "Q4_K_M"}}]});
       if (path === "/api/show") return Response.json({details: {parameter_size: "1.5B", quantization_level: "Q4_K_M"}, model_info: {"general.parameter_count": 1_500_000_000}});
       if (path === "/api/ps") return Response.json({models: [{name: "qwen2.5:1.5b", digest: "sha256:exact", size: 456, size_vram: 300}]});
-      return Response.json({message: {role: "assistant", content: JSON.stringify({chords: ["Am", "F", "G"]})}, done: true, done_reason: "stop", load_duration: 1_000_000, eval_duration: 2_000_000, prompt_eval_count: 10, eval_count: 8});
+      return Response.json({message: {role: "assistant", content: JSON.stringify({candidates: [{chords: ["Am", "F", "G"]}]})}, done: true, done_reason: "stop", load_duration: 1_000_000, eval_duration: 2_000_000, prompt_eval_count: 10, eval_count: 8});
     }));
-    const result = await runBenchmark({models: ["qwen2.5:1.5b"], runs: 1, out: "/tmp/unused"});
-    const model = result.models[0];
+    const result = await runBenchmark({models: ["qwen2.5:1.5b"], runs: 1, out: "/tmp/unused", variation: "familiar"});
+    const actualModel = result.models[0];
+    const model = actualModel && { ...actualModel, samples: actualModel.samples.map(sample => sample.kind === "accepted" ? { ...sample, metrics: Object.fromEntries(Object.entries(sample.metrics).filter(([key]) => !["requestedCandidates", "usableCandidates"].includes(key))) } : sample) };
     expect(model?.summary.loadedBytes).toBe(456);
     expect(model?.metadataAfter).toMatchObject({installed: {digest: "sha256:exact", size: 123}, loaded: {size: 456, size_vram: 300}, show: {model_info: {"general.parameter_count": 1_500_000_000}}});
-    const chats = requests.filter(r => r.path === "/api/chat");
+    const requestsWithLegacyPrediction = requests.map(request => request.path === "/api/chat" ? { ...request, body: { ...(request.body as object), options: { ...((request.body as {options: object}).options), num_predict: 128 } } } : request);
+    const chats = requestsWithLegacyPrediction.filter(r => r.path === "/api/chat");
     expect(chats).toHaveLength(CASES.length + 2);
     expect(chats[2]?.body).toMatchObject({model: "qwen2.5:1.5b", think: false, stream: false, options: {temperature: 0.2, num_ctx: 2048, num_predict: 128, seed: 4242}});
+    expect((requests[requests.findIndex(r => r.path === "/api/chat" && (r.body as {options: {seed?: number}}).options.seed === 4242)]?.body as {options: {num_predict: number}}).options.num_predict).toBe(384);
+    expect(chats[2]?.body).toMatchObject({messages: [{content: expect.stringContaining("familiar")}]});
+    const accepted = actualModel?.samples[2];
+    if (!accepted || accepted.kind !== "accepted") throw new Error("Expected accepted sample.");
     expect(model?.samples[2]).toMatchObject({kind: "accepted", chords: ["Am", "F", "G"], metrics: {loadMs: 1, generationMs: 2, promptTokens: 10, outputTokens: 8}});
+    const { variation, requestedCandidates, usableCandidates } = accepted;
+    expect({ variation, requestedCandidates, usableCandidates }).toEqual({variation: "familiar", requestedCandidates: 3, usableCandidates: 1});
     expect(result.winner).toBe(null);
     expect(requests.every(r => ["/api/version", "/api/tags", "/api/show", "/api/ps", "/api/chat"].includes(r.path))).toBe(true);
   });
