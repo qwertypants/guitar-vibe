@@ -10,6 +10,7 @@ import type { ProgressionCard } from "@/lib/progression";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { reducedMotion } from "@/lib/motion";
+import Link from "next/link";
 
 export function VibeChooser() {
   const [selection, setSelection] = useState<VibeSelection>({});
@@ -18,6 +19,8 @@ export function VibeChooser() {
   const [generatedSelection, setGeneratedSelection] = useState<VibeSelection>({});
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const choosePanel = useRef<HTMLDivElement>(null);
@@ -133,6 +136,20 @@ export function VibeChooser() {
     }
   };
 
+  const saveVibe = async () => {
+    if (!progression || saving) return;
+    setSaving(true);
+    setSaveMessage(null);
+    try {
+      const response = await fetch("/api/vibes", { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ vibeIds: getSelectedVibes(generatedSelection).map((vibe) => vibe.id), chords: progression.map((chord) => chord.symbol) }) });
+      if (!response.ok) throw new Error("This vibe could not be saved. Please try again.");
+      setSaveMessage("Vibe saved to My Vibes.");
+    } catch (cause) {
+      setSaveMessage(cause instanceof Error ? cause.message : "This vibe could not be saved. Please try again.");
+    } finally { setSaving(false); }
+  };
+
   return (
     <div ref={root} data-view={view} className="vibe-workspace space-y-6">
       <div className="flex items-center justify-between gap-3">
@@ -142,7 +159,8 @@ export function VibeChooser() {
         <p className="text-sm text-muted">{getSelectedVibes(summarySelection).map((vibe) => vibe.label).join(" · ") || "No vibes selected"}</p>
         <button type="button" disabled={pending} className="min-h-11 rounded-full border border-foreground/20 px-4 text-sm disabled:opacity-50" onClick={() => choose({})}>Reset selection</button>
       </div>
-      <Tabs label="Workspace" items={[{ id: "choose", label: "Choose vibe" }, { id: "play", label: "Play", disabled: !progression || transitioning }]} value={view} onChange={switchView}>
+      <Tabs label="Workspace" items={[{ id: "choose", label: "Choose vibe" }, { id: "play", label: "Play", disabled: !progression || transitioning }]} value={view} onChange={switchView}
+        actions={<Link href="/my-vibes" className="min-h-11 inline-flex items-center rounded-full px-4 text-sm font-medium text-accent hover:bg-accent/10">My Vibes</Link>}>
         <div ref={choosePanel} hidden={view !== "choose"} className="choose-panel space-y-5">
         <VibePicker value={selection} onChange={choose} disabled={pending} showSurpriseAction={false} />
         <div className="generation-actions flex gap-3 flex-wrap">
@@ -159,7 +177,9 @@ export function VibeChooser() {
         {error && <p role="alert" className="text-sm">{error}</p>}
         </div>
         {progression && <div ref={playPanel} hidden={view !== "play"} className="play-panel space-y-5">
-          <ProgressionResult key={JSON.stringify(progression)} chords={progression} active={view === "play" && !transitioning} onEditVibe={() => switchView("choose")} />
+          <><ProgressionResult key={JSON.stringify(progression)} chords={progression} active={view === "play" && !transitioning} onEditVibe={() => switchView("choose")} />
+          <div className="flex items-center gap-3"><button type="button" disabled={saving} onClick={() => void saveVibe()} className="min-h-11 rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground disabled:opacity-50">{saving ? "Saving…" : "Save vibe"}</button>
+            {saveMessage && <p role="status" className="text-sm text-muted">{saveMessage}</p>}</div></>
         </div>}
       </Tabs>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent } from "react";
 import { renderChordNotation } from "@/lib/chord-notation";
 import type { ChordVoicing } from "@/lib/voicings";
 
@@ -17,7 +17,7 @@ function isDarkColorScheme() {
   return typeof window !== "undefined" && !!window.matchMedia?.(colorSchemeQuery).matches;
 }
 
-export function ChordNotation({ voicing, onPlay }: { voicing: ChordVoicing; onPlay: () => void }) {
+export function ChordNotation({ voicing, onPlay, active = false }: { voicing: ChordVoicing; onPlay: (event: MouseEvent<HTMLButtonElement>) => void; active?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   const [failedVoicing, setFailedVoicing] = useState<ChordVoicing | null>(null);
   const isDark = useSyncExternalStore(subscribeToColorScheme, isDarkColorScheme, () => false);
@@ -49,8 +49,8 @@ export function ChordNotation({ voicing, onPlay }: { voicing: ChordVoicing; onPl
         <span className="chord-name block text-foreground">{voicing.chord}</span>
         <span className="block text-sm text-muted">{voicing.label}</span>
       </figcaption>
-      <button type="button" onClick={onPlay} aria-label={`Play ${voicing.chord}, ${voicing.label}`}
-        className="chord-diagram-button mx-auto block w-full max-w-[320px] rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+      <button type="button" onClick={onPlay} aria-label={`Play ${voicing.chord}, ${voicing.label}`} aria-pressed={active ? true : undefined}
+        className={`chord-diagram-button mx-auto block w-full max-w-[320px] rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${active ? "border border-accent bg-accent/10" : ""}`}>
         <div ref={host} aria-hidden="true" className="chord-diagram flex justify-center" />
       </button>
       <div className="chord-details" aria-label="Chord details">

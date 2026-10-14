@@ -9,6 +9,7 @@
 /.worktrees/
 /out/
 /coverage/
+/data/vibes.sqlite*
 /playwright-report/
 /test-results/
 *.tsbuildinfo

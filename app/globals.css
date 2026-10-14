@@ -62,6 +62,15 @@ button:not(:disabled):hover {
   .progression-grid:has(> li:nth-child(4)) > li { gap: .35rem; padding: .65rem; }
   .progression-grid:has(> li:nth-child(4)) .chord-notation > .chord-diagram-button { width: min(100%, 160px); max-width: 160px; }
 }
+
+@media (min-width: 1280px) {
+  .my-vibes-entry .chord-name { font-size: 1.4rem; }
+  .my-vibes-entry .chord-title > :last-child { font-size: .68rem; }
+  .my-vibes-entry .chord-details { font-size: .56rem; }
+  .my-vibes-entry .chord-details > div { gap: .1rem; }
+  .my-vibes-entry .fret-pill,
+  .my-vibes-entry .note-pill { min-width: 1rem; padding: .05rem .1rem; }
+}
 @media (min-width: 900px) and (max-height: 800px) {
   .progression-grid:has(> li:nth-child(4)) .chord-notation > .chord-diagram-button { width: min(100%, 140px); max-width: 140px; }
 }
@@ -103,6 +112,7 @@ html[data-motion-boot="pending"] [data-intro] { visibility: hidden; }
 }
 
 .tab-bar { position: relative; display: flex; gap: .25rem; flex-wrap: wrap; border-bottom: 1px solid color-mix(in srgb, var(--foreground) 15%, transparent); }
+.tab-menu-tabs { position: relative; display: flex; gap: .25rem; flex-wrap: wrap; }
 .tab-bar button { min-height: 44px; padding: .6rem 1rem; color: var(--muted); border-bottom: 2px solid transparent; font-size: .875rem; }
 .tab-bar button[aria-selected="true"] { color: var(--accent); }
 .tab-indicator { position: absolute; bottom: -1px; left: 0; width: 1px; height: 2px; background: var(--accent); transform-origin: left center; pointer-events: none; }
@@ -244,6 +254,11 @@ html[data-motion-boot="pending"] [data-intro] { visibility: hidden; }
   gap: .2rem;
 }
 .page-shell:has(.vibe-workspace) .tab-bar[aria-label="Workspace"] button {
+  min-height: 2rem;
+  padding: .2rem .65rem;
+  font-size: .8rem;
+}
+.page-shell:has(.vibe-workspace) .tab-bar[aria-label="Workspace"] > a {
   min-height: 2rem;
   padding: .2rem .65rem;
   font-size: .8rem;

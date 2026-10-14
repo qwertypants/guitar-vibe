@@ -23,6 +23,21 @@ test("the landing page keeps explicit generation after visible selection", () =>
   expect(fetch).not.toHaveBeenCalled();
 });
 
+test("saving a generated progression sends its creation facets and chord symbols", async () => {
+  const chords = resolveProgression(["Am", "F", "C"]);
+  if (!chords) throw new Error("Missing progression fixture");
+  const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({ chords })))
+    .mockResolvedValueOnce(Response.json({ vibe: { id: 1 } }, { status: 201 }));
+  render(<Home />);
+  fireEvent.click(screen.getByRole("button", { name: "Moody" }));
+  fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
+  await screen.findByRole("button", { name: "Save vibe" });
+  fireEvent.click(screen.getByRole("button", { name: "Save vibe" }));
+  await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+  expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body))).toEqual({ vibeIds: ["mood-moody"], chords: ["Am", "F", "C"] });
+  expect(await screen.findByText("Vibe saved to My Vibes.")).toHaveAttribute("role", "status");
+});
+
 test("More and help are absent", () => {
   render(<Home />);
   expect(screen.queryByRole("button", { name: "More" })).not.toBeInTheDocument();
@@ -39,6 +54,9 @@ test("Reset clears the selection and a generation error", async () => {
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(screen.queryByRole("status", { name: "Selected vibes" })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Generate progression" })).toBeDisabled();
+  const workspace = screen.getByRole("tablist", { name: "Workspace" });
+  expect(within(workspace.closest(".tab-bar")!).getByRole("link", { name: "My Vibes" })).toHaveAttribute("href", "/my-vibes");
+  expect(screen.queryByRole("navigation", { name: "Main navigation" })).not.toBeInTheDocument();
 });
 
 test("Reset clears selection while keeping an existing progression", async () => {
