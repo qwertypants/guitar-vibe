@@ -1,9 +1,11 @@
 import { z } from "zod";
 import { vibeCatalog } from "@/lib/vibes";
 import { resolveChord, type ChordVoicing } from "@/lib/voicings";
+import { variationModeSchema } from "@/lib/variation";
 
 export const progressionRequestSchema = z.object({
   vibeIds: z.array(z.string().min(1).max(64)).min(1).max(5),
+  variation: variationModeSchema.default("familiar"),
 }).strict();
 
 export const progressionSchema = z.object({

@@ -7,6 +7,7 @@ import { ProgressionResult } from "@/components/ProgressionResult";
 import { UiIcon } from "@/components/UiIcon";
 import { getSelectedVibes, hasVibeSelection, surpriseVibes, type VibeSelection } from "@/lib/vibe-selection";
 import type { ProgressionCard } from "@/lib/progression";
+import { variationModeOptions, type VariationMode } from "@/lib/variation";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { reducedMotion } from "@/lib/motion";
@@ -17,6 +18,7 @@ export function VibeChooser() {
   const [progression, setProgression] = useState<ProgressionCard[] | null>(null);
   const [view, setView] = useState<"choose" | "play">("choose");
   const [generatedSelection, setGeneratedSelection] = useState<VibeSelection>({});
+  const [variation, setVariation] = useState<VariationMode>("familiar");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -106,7 +108,7 @@ export function VibeChooser() {
       const response = await fetch("/api/progression", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ vibeIds: getSelectedVibes(selection).map((vibe) => vibe.id) }),
+        body: JSON.stringify({ vibeIds: getSelectedVibes(selection).map((vibe) => vibe.id), variation }),
       });
       const payload: unknown = await response.json();
       if (!response.ok || typeof payload !== "object" || payload === null || !("chords" in payload) || !Array.isArray(payload.chords)) {
@@ -163,6 +165,18 @@ export function VibeChooser() {
         actions={<Link href="/my-vibes" className="min-h-11 inline-flex items-center rounded-full px-4 text-sm font-medium text-accent hover:bg-accent/10">My Vibes</Link>}>
         <div ref={choosePanel} hidden={view !== "choose"} className="choose-panel space-y-5">
         <VibePicker value={selection} onChange={choose} disabled={pending} showSurpriseAction={false} />
+        <div role="group" aria-label="Progression variation" className="space-y-2">
+          <p className="text-sm font-medium">Chord variation</p>
+          <div className="flex flex-wrap gap-2">
+            {variationModeOptions.map((option) => <button key={option.value} type="button" aria-pressed={variation === option.value}
+              aria-describedby={`variation-${option.value}`} disabled={pending}
+              onClick={() => setVariation(option.value)}
+              className={`min-h-11 rounded-md border px-3 py-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-50 ${variation === option.value ? "border-accent bg-accent/10" : "border-foreground/20"}`}>
+              <span className="block font-medium">{option.label}</span>
+              <span id={`variation-${option.value}`} className="block text-xs text-muted">{option.description}</span>
+            </button>)}
+          </div>
+        </div>
         <div className="generation-actions flex gap-3 flex-wrap">
           <button data-intro data-generate type="button" disabled={!hasVibeSelection(selection) || pending || transitioning} onClick={() => void generate()}
             className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto">
