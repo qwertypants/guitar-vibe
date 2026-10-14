@@ -1,11 +1,14 @@
 import { describe, expect, test } from "vitest";
-import { CHORD_INTERVALS, SUPPORTED_CHORDS, parseChordSymbol } from "@/lib/chords";
+import { CHORD_INTERVALS, SUPPORTED_CHORDS as ALL_SUPPORTED_CHORDS, parseChordSymbol } from "@/lib/chords";
 import { resolveChord, STANDARD_TUNING_MIDI } from "@/lib/voicings";
 import { voicingToVexTab } from "@/lib/chord-notation";
+
+const SUPPORTED_CHORDS = ALL_SUPPORTED_CHORDS.filter(({ suffix }) => suffix !== "sus2" && suffix !== "sus4");
 
 describe("trusted chord catalog", () => {
   test.each([
     [" C ", "C"], ["Dbmaj7", "C#maj7"], ["B♭m7", "A#m7"], ["F♯7", "F#7"], ["Cb", "B"],
+    ["Csus2", "Csus2"], ["D♭sus4", "C#sus4"], ["F♯sus2", "F#sus2"],
   ])("normalizes %s to %s", (input, expected) => {
     expect(parseChordSymbol(input)).toBe(expected);
   });
@@ -16,7 +19,7 @@ describe("trusted chord catalog", () => {
     },
   );
 
-  test("all 60 symbols have playable positions with exactly the expected chord tones", () => {
+  test("all 60 original symbols have playable positions with exactly the expected chord tones", () => {
     expect(SUPPORTED_CHORDS).toHaveLength(60);
     const ids = new Set<string>();
     for (const { symbol, pitchClass, suffix } of SUPPORTED_CHORDS) {
@@ -42,6 +45,42 @@ describe("trusted chord catalog", () => {
     }
   });
 
+  test("all 84 symbols round-trip; suspended voicings contain only their catalog tones", () => {
+    expect(ALL_SUPPORTED_CHORDS).toHaveLength(84);
+    for (const { symbol, pitchClass, suffix } of ALL_SUPPORTED_CHORDS) {
+      expect(parseChordSymbol(symbol)).toBe(symbol);
+      if (suffix !== "sus2" && suffix !== "sus4") continue;
+      const result = resolveChord(symbol);
+      expect(result.kind).toBe("resolved");
+      if (result.kind !== "resolved") throw new Error(symbol);
+      const expectedPitches = CHORD_INTERVALS[suffix].map((interval) => (pitchClass + interval) % 12).sort((a, b) => a - b);
+      for (const voicing of result.voicings) {
+        expect([...new Set(voicing.midiNotes.map((note) => note % 12))].sort((a, b) => a - b)).toEqual(expectedPitches);
+        expect(voicing.notes.map((note) => note.midi)).toEqual(voicing.midiNotes);
+        const fretted = voicing.notes.filter((note) => note.fret > 0).map((note) => note.fret);
+        expect(Math.max(...fretted) - Math.min(...fretted)).toBeLessThanOrEqual(3);
+      }
+    }
+  });
+
+  test("suspended symbols expose the expected interval metadata and exact C voicings", () => {
+    expect(CHORD_INTERVALS.sus2).toEqual([0, 2, 7]);
+    expect(CHORD_INTERVALS.sus4).toEqual([0, 5, 7]);
+    const sus2 = resolveChord("Csus2");
+    const sus4 = resolveChord("Csus4");
+    if (sus2.kind !== "resolved" || sus4.kind !== "resolved") throw new Error("Missing suspended chord voicing");
+    expect(sus2.voicings[0]).toMatchObject({
+      frets: [null, 3, 5, 5, 3, 3],
+      midiNotes: [48, 55, 60, 62, 67],
+      notes: ["C3", "G3", "C4", "D4", "G4"].map((name) => ({ name })),
+    });
+    expect(sus4.voicings[0]).toMatchObject({
+      frets: [null, 3, 5, 5, 6, 3],
+      midiNotes: [48, 55, 60, 65, 67],
+      notes: ["C3", "G3", "C4", "F4", "G4"].map((name) => ({ name })),
+    });
+  });
+
   test("C open and fret-eight selections expose distinct exact notes and trusted tab syntax", () => {
     const chord = resolveChord("C");
     if (chord.kind !== "resolved") throw new Error("Missing C");
@@ -60,7 +99,7 @@ describe("trusted chord catalog", () => {
 
 test("diagram string positions reconstruct every catalog voicing and its playback notes", async () => {
   const { voicingToVexChords } = await import("@/lib/chord-notation");
-  for (const { symbol } of SUPPORTED_CHORDS) {
+  for (const { symbol } of ALL_SUPPORTED_CHORDS) {
     const resolved = resolveChord(symbol);
     if (resolved.kind !== "resolved") throw new Error(symbol);
     for (const voicing of resolved.voicings) {

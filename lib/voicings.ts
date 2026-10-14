@@ -42,6 +42,8 @@ const E_SHAPES = {
   "7": [0, 2, 0, 1, 0, 0],
   maj7: [0, null, 1, 1, 0, 0],
   m7: [0, 2, 0, 0, 0, 0],
+  sus2: [0, 2, null, null, null, 2],
+  sus4: [0, 2, 2, 2, 0, 0],
 } as const satisfies Record<ChordSuffix, GuitarFrets>;
 
 const A_SHAPES = {
@@ -50,6 +52,8 @@ const A_SHAPES = {
   "7": [null, 0, 2, 0, 2, 0],
   maj7: [null, 0, 2, 1, 2, 0],
   m7: [null, 0, 2, 0, 1, 0],
+  sus2: [null, 0, 2, 2, 0, 0],
+  sus4: [null, 0, 2, 2, 3, 0],
 } as const satisfies Record<ChordSuffix, GuitarFrets>;
 
 const OPEN_SHAPES: Partial<Record<SupportedChordSymbol, GuitarFrets>> = {
