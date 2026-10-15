@@ -1,8 +1,9 @@
 import type { EvalCase } from "./cases";
 import { CHORD_INTERVALS, SUPPORTED_CHORDS } from "../lib/chords";
 import { progressionSchema, resolveProgression } from "../lib/progression";
+import type { VariationMode } from "../lib/variation";
 export type Score = { valid: boolean; coherent: boolean; proxyPass: boolean; reasons: string[] };
-export type Sample = { phase: "first-request" | "discarded-warmup" | "scored"; caseId: string; seed: number } & ({ kind: "accepted"; chords: string[]; metrics: { wallMs: number; loadMs: number; generationMs: number; promptTokens: number; outputTokens: number }; score: Score } | { kind: "failed"; error: string; wallMs: number });
+export type Sample = { phase: "first-request" | "discarded-warmup" | "scored"; caseId: string; seed: number; variation: VariationMode; requestedCandidates: number; usableCandidates: number } & ({ kind: "accepted"; chords: string[]; metrics: { wallMs: number; loadMs: number; generationMs: number; promptTokens: number; outputTokens: number; requestedCandidates: number; usableCandidates: number }; score: Score } | { kind: "failed"; error: string; wallMs: number });
 export function scoreProgression(fixture: EvalCase, chords: readonly string[]): Score {
   const parsed = progressionSchema.safeParse({ chords });
   const resolved = parsed.success ? resolveProgression(parsed.data.chords) : null;
@@ -66,7 +67,10 @@ export function aggregate(model: string, samples: readonly Sample[], loadedBytes
   const distinctProgressions = new Set(accepted.filter(s => s.score.valid).map(s => JSON.stringify(s.chords))).size;
   const latencies = scored.map(s => s.kind === "accepted" ? s.metrics.wallMs : s.wallMs);
   const loadTimes = samples.filter(s => s.kind === "accepted").map(s => s.metrics.loadMs);
+  const candidateSamples = scored;
   return { model, loadedBytes, sampleCount: scored.length, failureCount: scored.length - accepted.length, validRate, proxyPassRate,
+    requestedCandidateCount: candidateSamples.reduce((sum, sample) => sum + sample.requestedCandidates, 0),
+    usableCandidateCount: candidateSamples.reduce((sum, sample) => sum + sample.usableCandidates, 0),
     distinctProgressions, passes: scored.length > 0 && validRate === 1 && proxyPassRate >= 0.8 && distinctProgressions >= 3,
     p50WarmWallMs: percentile(latencies, 0.5), p95WarmWallMs: percentile(latencies, 0.95), maximumLoadMs: loadTimes.length ? Math.max(...loadTimes) : null };
 }

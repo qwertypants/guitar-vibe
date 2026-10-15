@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { resolveProgression } from "@/lib/progression";
+import { variationModeOptions } from "@/lib/variation";
 import Home from "@/app/page";
 
 beforeEach(() => {
@@ -21,6 +22,43 @@ test("the landing page keeps explicit generation after visible selection", () =>
   expect(generate).toBeEnabled();
   expect(within(screen.getByRole("status", { name: "Selected vibes" })).getAllByRole("button")).toHaveLength(5);
   expect(fetch).not.toHaveBeenCalled();
+});
+
+test.each(variationModeOptions)("sends the selected $value mode and keeps the result playable", async (option) => {
+  const chords = resolveProgression(["Am", "F", "C"]);
+  if (!chords) throw new Error("Missing progression fixture");
+  const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ chords }));
+  render(<Home />);
+  expect(screen.getByRole("group", { name: "Progression variation" })).toBeVisible();
+  expect(screen.getByRole("button", { name: /Familiar/ })).toHaveAttribute("aria-pressed", "true");
+  const mode = screen.getByRole("button", { name: new RegExp(option.label) });
+  expect(mode).toHaveAttribute("aria-describedby", `variation-${option.value}`);
+  fireEvent.click(screen.getByRole("button", { name: "Moody" }));
+  fireEvent.click(mode);
+  expect(mode).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
+  await waitFor(() => expect(screen.getByRole("tab", { name: "Play", selected: true })).toBeVisible());
+  expect(JSON.parse(String(fetch.mock.calls[0]?.[1]?.body))).toEqual({ vibeIds: ["mood-moody"], variation: option.value });
+  expect(screen.getByRole("button", { name: "Play Am, Open position" })).toBeVisible();
+  expect(screen.getByRole("group", { name: "Guitar position for Am, chord 1" })).toBeVisible();
+});
+
+test("keeps the selected variation through a pending request and generation error", async () => {
+  let resolveRequest: ((response: Response) => void) | undefined;
+  vi.spyOn(globalThis, "fetch").mockImplementationOnce(() => new Promise<Response>((resolve) => { resolveRequest = resolve; }));
+  render(<Home />);
+  fireEvent.click(screen.getByRole("button", { name: "Moody" }));
+  const adventurous = screen.getByRole("button", { name: /Adventurous/ });
+  fireEvent.click(adventurous);
+  fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
+  expect(adventurous).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: /Familiar/ })).toBeDisabled();
+  expect(screen.getByRole("button", { name: /Richer chords/ })).toBeDisabled();
+  expect(adventurous).toBeDisabled();
+  resolveRequest?.(Response.json({ error: "Generation failed" }, { status: 502 }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Generation failed");
+  expect(adventurous).toHaveAttribute("aria-pressed", "true");
+  expect(adventurous).toBeEnabled();
 });
 
 test("saving a generated progression sends its creation facets and chord symbols", async () => {

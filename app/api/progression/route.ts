@@ -23,7 +23,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: errors.invalid_input.error }, { status: 400 });
   }
   try {
-    const output = await generateLocalProgression(parsedRequest.data.vibeIds, { signal: request.signal });
+    const output = await generateLocalProgression(parsedRequest.data.vibeIds, {
+      signal: request.signal,
+      variation: parsedRequest.data.variation,
+    });
     const chords = resolveProgression(output.chords);
     if (!chords) throw new LocalModelError("invalid_output");
     return NextResponse.json({ chords });

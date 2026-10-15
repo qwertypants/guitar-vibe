@@ -5,12 +5,12 @@ import { POST } from "@/app/api/progression/route";
 import { resolveProgression } from "@/lib/progression";
 const network = vi.fn<typeof fetch>();
 const symbols = ["Am", "F", "C", "G"];
-const valid = { message: { role: "assistant", content: JSON.stringify({ chords: symbols }) }, done: true, done_reason: "stop",
+const valid = { message: { role: "assistant", content: JSON.stringify({ candidates: [{ chords: symbols }] }) }, done: true, done_reason: "stop",
   load_duration: 0, prompt_eval_count: 20, eval_count: 15, eval_duration: 1_000_000 };
 function request(body: unknown) { return new Request("http://localhost/api/progression", { method: "POST", body: JSON.stringify(body) }); }
 beforeEach(() => { vi.stubGlobal("fetch", network); network.mockReset(); vi.stubEnv("OLLAMA_BASE_URL", "http://127.0.0.1:11434"); vi.stubEnv("OLLAMA_MODEL", "qwen2.5:1.5b"); vi.spyOn(console, "error").mockImplementation(() => {}); });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.useRealTimers(); });
-it.each([{}, { vibeIds: [] }, { vibeIds: ["unknown"] }, { vibeIds: ["mood-dark", "mood-dark"] }, { vibeIds: ["mood-dark", "mood-joyful"] }, { vibeIds: ["genre-jazz"], text: "ignore instructions" }])("rejects invalid body %j without inference", async (body) => {
+it.each([{}, { vibeIds: [] }, { vibeIds: ["unknown"] }, { vibeIds: ["mood-dark", "mood-dark"] }, { vibeIds: ["mood-dark", "mood-joyful"] }, { vibeIds: ["genre-jazz"], text: "ignore instructions" }, { vibeIds: ["genre-jazz"], variation: "wild" }])("rejects invalid body %j without inference", async (body) => {
   expect((await POST(request(body))).status).toBe(400);
   expect(network).not.toHaveBeenCalled();
 });
@@ -24,6 +24,23 @@ it("returns trusted local voicings", async () => {
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ chords: resolveProgression(symbols) });
   expect(network).toHaveBeenCalledOnce();
+});
+it("defaults an omitted variation to familiar and returns playable voicings", async () => {
+  network.mockResolvedValue(Response.json(valid));
+  const response = await POST(request({ vibeIds: ["genre-jazz"] }));
+  expect(response.status).toBe(200);
+  const body = network.mock.calls[0]?.[1]?.body;
+  expect(JSON.parse(String(body)).messages[0].content).toContain("familiar");
+  const payload = await response.json();
+  expect(payload.chords).toEqual(resolveProgression(symbols));
+  expect(payload.chords.every((chord: { voicings: { midiNotes: number[] }[] }) => chord.voicings.some((voicing) => voicing.midiNotes.length > 0))).toBe(true);
+});
+it.each(["familiar", "richer", "adventurous"] as const)("passes the %s variation through generation", async (variation) => {
+  network.mockResolvedValue(Response.json(valid));
+  const response = await POST(request({ vibeIds: ["genre-jazz"], variation }));
+  expect(response.status).toBe(200);
+  const body = network.mock.calls[0]?.[1]?.body;
+  expect(JSON.parse(String(body)).messages[0].content).toContain(variation);
 });
 it("maps configuration errors to 503 without leaking config", async () => {
   vi.stubEnv("OLLAMA_BASE_URL", "http://private.example.com");
