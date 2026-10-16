@@ -8,7 +8,9 @@ declare module "vextab" {
     constructor(artist: Artist);
     parse(source: string): void;
   }
-  export type VexTabRenderer = object;
+  export interface VexTabRenderer {
+    resize(width: number, height: number): void;
+  }
   export const Vex: {
     Flow: {
       Renderer: {

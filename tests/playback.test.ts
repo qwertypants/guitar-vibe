@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { CHORD_DURATION_MS, PlaybackController, ToneGuitarPlayback, type TonePlaybackRuntime, type PlaybackAudio } from "@/lib/playback";
+import { CHORD_DURATION_MS, SCALE_NOTE_DURATION_MS, PlaybackController, ToneGuitarPlayback, type TonePlaybackRuntime, type PlaybackAudio } from "@/lib/playback";
 import { SUPPORTED_CHORDS } from "@/lib/chords";
 import { resolveChord } from "@/lib/voicings";
 
@@ -51,6 +51,21 @@ describe("exclusive playback controller", () => {
     expect(output.play.mock.calls.map(([notes]) => notes)).toEqual(selected.map((voicing) => voicing.midiNotes));
     expect(controller.getState()).toEqual({ kind: "idle" });
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  test("scale playback plays unique pitches in ascending order and can be cancelled", async () => {
+    const output = audio();
+    const controller = new PlaybackController(output);
+    await controller.sequenceNotes("C-major", [40, 43, 45]);
+    expect(output.play).toHaveBeenLastCalledWith([40], SCALE_NOTE_DURATION_MS);
+    expect(controller.getState()).toEqual({ kind: "scale", scaleId: "C-major", index: 0 });
+    await vi.advanceTimersByTimeAsync(SCALE_NOTE_DURATION_MS);
+    expect(output.play).toHaveBeenLastCalledWith([43], SCALE_NOTE_DURATION_MS);
+    expect(controller.getState()).toEqual({ kind: "scale", scaleId: "C-major", index: 1 });
+    controller.stop();
+    await vi.advanceTimersByTimeAsync(SCALE_NOTE_DURATION_MS * 3);
+    expect(output.play).toHaveBeenCalledTimes(2);
+    expect(controller.getState()).toEqual({ kind: "idle" });
   });
 
   test("switching modes silences the old notes and cancels all remaining sequence steps", async () => {

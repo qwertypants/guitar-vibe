@@ -5,6 +5,8 @@ import { PlaybackControls } from "@/components/PlaybackControls";
 import { ChordNotation } from "@/components/ChordNotation";
 import { ProgressionResult } from "@/components/ProgressionResult";
 import { PlaybackController } from "@/lib/playback";
+import { getBestProgressionScale } from "@/lib/harmony";
+import { getScaleFretboard } from "@/lib/scale-notation";
 import { resolveProgression } from "@/lib/progression";
 import { resolveChord } from "@/lib/voicings";
 
@@ -104,6 +106,33 @@ test("position buttons play the pressed voicing, survive selection renders, and 
   expect(audio.play).toHaveBeenLastCalledWith(open.midiNotes, 1200);
   fireEvent.click(screen.getByRole("button", { name: /^Stop$/ }));
   expect(controller.getState().kind).toBe("idle");
+});
+
+test("scale and chord playback share one controller and stop one another", async () => {
+  const chords = resolveProgression(["C", "Am", "G"]);
+  if (!chords) throw new Error("Missing progression fixture");
+  const scale = getBestProgressionScale(chords.map(({ symbol }) => symbol));
+  if (!scale) throw new Error("Missing scale fixture");
+  const fretboard = getScaleFretboard(scale);
+  const audio = { prepare: vi.fn(async () => {}), play: vi.fn(), stop: vi.fn(), dispose: vi.fn() };
+  const controller = new PlaybackController(audio);
+  render(<ProgressionResult chords={chords} createController={() => controller} />);
+  const disclosure = screen.getByText(scale.name).closest("details");
+  if (!disclosure) throw new Error("Missing scale section");
+  fireEvent.click(within(disclosure).getByText(scale.name));
+  await screen.findByRole("img", { name: new RegExp(`${scale.name} tablature`) });
+  fireEvent.click(within(disclosure).getByRole("button", { name: `Play ${scale.name} scale ascending` }));
+  await waitFor(() => expect(audio.play).toHaveBeenLastCalledWith([fretboard.midiNotes[0]], 300));
+  expect(controller.getState()).toEqual({ kind: "scale", scaleId: scale.id, index: 0 });
+  fireEvent.click(screen.getByRole("button", { name: "Play progression" }));
+  await waitFor(() => expect(controller.getState().kind).toBe("sequence"));
+  expect(audio.play).toHaveBeenLastCalledWith(chords[0]?.voicings[0]?.midiNotes, 1200);
+  expect(within(disclosure).getByRole("button", { name: `Play ${scale.name} scale ascending` })).toHaveAttribute("aria-pressed", "false");
+  fireEvent.click(within(disclosure).getByRole("button", { name: `Play ${scale.name} scale ascending` }));
+  await waitFor(() => expect(controller.getState()).toEqual({ kind: "scale", scaleId: scale.id, index: 0 }));
+  expect(audio.play).toHaveBeenLastCalledWith([fretboard.midiNotes[0]], 300);
+  fireEvent.click(within(disclosure).getByRole("button", { name: `Stop ${scale.name} scale ascending` }));
+  expect(controller.getState()).toEqual({ kind: "idle" });
 });
 
 test("rapid position presses during audio loading play only the last choice", async () => {

@@ -8,11 +8,14 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { reducedMotion } from "@/lib/motion";
 
-export function PlaybackControls({ voicings, children, active = true, createController = () => new PlaybackController() }: {
+export type PlaybackControlsFooter = { state: ReturnType<PlaybackController["getState"]>; playScale: (scaleId: string, midiNotes: readonly number[]) => void };
+
+export function PlaybackControls({ voicings, children, active = true, createController = () => new PlaybackController(), renderFooter }: {
   voicings: readonly ChordVoicing[];
   active?: boolean;
   children?: (voicing: ChordVoicing, index: number, preview: (voicing: ChordVoicing) => void) => ReactNode;
   createController?: () => PlaybackController;
+  renderFooter?: (controls: PlaybackControlsFooter) => ReactNode;
 }) {
   const [controller] = useState(createController);
   const state = useSyncExternalStore(controller.subscribe, controller.getState, controller.getState);
@@ -20,7 +23,7 @@ export function PlaybackControls({ voicings, children, active = true, createCont
   const orderHintId = useId();
   const grid = useRef<HTMLOListElement>(null);
   useGSAP(() => {
-    if (reducedMotion() || state.kind === "idle") return;
+    if (reducedMotion() || state.kind === "idle" || state.kind === "scale") return;
     const index = state.kind === "sequence" ? state.index : voicings.findIndex((voicing) => voicing.id === state.voicingId);
     const name = grid.current?.children[index]?.querySelector<HTMLElement>(".chord-name");
     if (!name) return;
@@ -40,6 +43,13 @@ export function PlaybackControls({ voicings, children, active = true, createCont
     });
   };
   const preview = (voicing: ChordVoicing) => start(() => controller.preview(voicing));
+  const playScale = (scaleId: string, midiNotes: readonly number[]) => {
+    if (state.kind === "scale" && state.scaleId === scaleId) {
+      controller.stop();
+      return;
+    }
+    start(() => controller.sequenceNotes(scaleId, midiNotes));
+  };
   const buttonClass = "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-foreground/20 px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2";
   return (
     <section aria-label="Chord playback" className="chord-playback space-y-4">
@@ -56,7 +66,8 @@ export function PlaybackControls({ voicings, children, active = true, createCont
         </button>
       </div>
       <p className="sr-only" role="status" aria-live="polite">
-        {state.kind === "idle" ? "Playback stopped." : state.kind === "sequence"
+        {state.kind === "idle" ? "Playback stopped." : state.kind === "scale"
+          ? `Playing scale note ${state.index + 1}.` : state.kind === "sequence"
           ? `Playing position ${state.index + 1} of ${voicings.length}.` : "Playing chord preview."}
       </p>
       {error && <p role="alert">{error}</p>}
@@ -77,6 +88,7 @@ export function PlaybackControls({ voicings, children, active = true, createCont
           })}
         </ol>
       </div>
+      {renderFooter?.({ state, playScale })}
     </section>
   );
 }

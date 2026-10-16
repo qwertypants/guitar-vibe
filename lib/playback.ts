@@ -1,11 +1,13 @@
 import type { ChordVoicing } from "@/lib/voicings";
 
 export const CHORD_DURATION_MS = 1200;
+export const SCALE_NOTE_DURATION_MS = 300;
 
 export type PlaybackState =
   | { readonly kind: "idle" }
   | { readonly kind: "preview"; readonly voicingId: string }
-  | { readonly kind: "sequence"; readonly voicingId: string; readonly index: number };
+  | { readonly kind: "sequence"; readonly voicingId: string; readonly index: number }
+  | { readonly kind: "scale"; readonly scaleId: string; readonly index: number };
 
 export interface PlaybackAudio {
   prepare(): Promise<void>;
@@ -152,33 +154,45 @@ export class PlaybackController {
     this.update(IDLE);
   };
 
-  preview = (voicing: ChordVoicing) => this.start([voicing], "preview");
-  sequence = (voicings: readonly ChordVoicing[]) => this.start([...voicings], "sequence");
+  preview = (voicing: ChordVoicing) => this.start([{ midiNotes: voicing.midiNotes, voicingId: voicing.id }], "preview");
+  sequence = (voicings: readonly ChordVoicing[]) => this.start(
+    voicings.map((voicing) => ({ midiNotes: voicing.midiNotes, voicingId: voicing.id })), "sequence",
+  );
+  sequenceNotes = (scaleId: string, midiNotes: readonly number[]) => this.start(
+    midiNotes.map((midi) => ({ midiNotes: [midi] })), "scale", scaleId,
+  );
 
-  private async start(voicings: readonly ChordVoicing[], mode: "preview" | "sequence") {
+  private async start(steps: readonly { midiNotes: readonly number[]; voicingId?: string }[], mode: "preview" | "sequence" | "scale", scaleId?: string) {
     this.stop();
     const revision = this.revision;
-    const first = voicings[0];
+    const first = steps[0];
     if (!first) return;
-    this.update(mode === "preview"
-      ? { kind: "preview", voicingId: first.id }
-      : { kind: "sequence", voicingId: first.id, index: 0 });
+    const stateFor = (step: (typeof steps)[number], index: number): PlaybackState => {
+      if (mode === "preview" || mode === "sequence") {
+        if (step.voicingId === undefined) throw new Error("Chord playback step is missing its voicing ID.");
+        return mode === "preview"
+          ? { kind: "preview", voicingId: step.voicingId }
+          : { kind: "sequence", voicingId: step.voicingId, index };
+      }
+      if (scaleId === undefined) throw new Error("Scale playback is missing its scale ID.");
+      return { kind: "scale", scaleId, index };
+    };
+    this.update(stateFor(first, 0));
     try {
       await this.audio.prepare();
       if (revision !== this.revision) return;
       const playAt = (index: number) => {
         if (revision !== this.revision) return;
-        const voicing = voicings[index];
-        if (!voicing) { this.stop(); return; }
+        const step = steps[index];
+        if (!step) { this.stop(); return; }
         this.audio.stop();
-        this.update(mode === "preview"
-          ? { kind: "preview", voicingId: voicing.id }
-          : { kind: "sequence", voicingId: voicing.id, index });
-        this.audio.play(voicing.midiNotes, CHORD_DURATION_MS);
+        this.update(stateFor(step, index));
+        const durationMs = mode === "scale" ? SCALE_NOTE_DURATION_MS : CHORD_DURATION_MS;
+        this.audio.play(step.midiNotes, durationMs);
         this.timer = setTimeout(() => {
           try { playAt(index + 1); }
           catch { this.stop(); }
-        }, CHORD_DURATION_MS);
+        }, durationMs);
       };
       playAt(0);
     } catch (error) {

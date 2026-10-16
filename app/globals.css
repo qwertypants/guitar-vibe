@@ -119,6 +119,16 @@ html[data-motion-boot="pending"] [data-intro] { visibility: hidden; }
 .chord-name { font-family: Georgia, "Times New Roman", serif; font-size: 3rem; font-weight: 400; letter-spacing: -.055em; line-height: 1.1; }
 .chord-details { font-family: "Courier New", monospace; font-size: .68rem; }
 .detail-label { font-family: Arial, sans-serif; font-size: .65rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.scale-practice { border: 1px solid color-mix(in srgb, var(--foreground) 18%, transparent); border-radius: .75rem; background: var(--card); }
+.scale-practice-summary { display: flex; min-height: 2.75rem; align-items: center; gap: .75rem; padding: .65rem .9rem; cursor: pointer; list-style-position: inside; }
+.scale-practice-name { color: var(--foreground); font-weight: 600; }
+.scale-practice-content { display: grid; gap: .75rem; padding: 0 .9rem .9rem; }
+.scale-practice-hint { color: var(--muted); font-size: .8rem; }
+.scale-play-button { justify-self: start; min-height: 2.75rem; border-radius: .5rem; border: 1px solid var(--accent); background: var(--accent); padding: .5rem 1rem; color: var(--accent-foreground); font-weight: 600; }
+.scale-play-button:focus-visible, .scale-practice-summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; }
+.scale-notation-viewport { max-width: 100%; overflow-x: auto; color: #1f2937; }
+.scale-notation { display: inline-block; width: 940px; border-radius: .5rem; background: #fff; padding: .5rem; }
+.scale-notation svg { display: block; }
 .chord-notation { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 58%); align-items: start; column-gap: .5rem; row-gap: .2rem; }
 .chord-title { grid-column: 1; grid-row: 1; min-width: 0; }
 .chord-notation > .chord-diagram-button { grid-column: 1 / -1; grid-row: 2; justify-self: center; width: 100%; max-width: none; margin-inline: auto; }
