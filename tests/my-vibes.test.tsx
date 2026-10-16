@@ -31,7 +31,9 @@ it("filters by any chosen value, clears filters, previews a chord, and confirms 
   });
   const controller = new PlaybackController();
   const preview = vi.fn().mockResolvedValue(undefined);
+  const sequence = vi.fn().mockResolvedValue(undefined);
   controller.preview = preview;
+  controller.sequence = sequence;
   vi.spyOn(window, "confirm").mockReturnValue(true);
   const { container } = render(<MyVibesLibrary createController={() => controller} />);
   await screen.findByRole("heading", { name: /Oct 12, 2026/ });
@@ -55,6 +57,12 @@ it("filters by any chosen value, clears filters, previews a chord, and confirms 
   expect(screen.getByRole("heading", { name: /Oct 11, 2026/ })).toBeInTheDocument();
   fireEvent.click(within(screen.getAllByRole("listitem")[0]!).getByRole("button", { name: `Play Am, ${alternateAmVoicing.label}` }));
   expect(preview).toHaveBeenCalledWith(alternateAmVoicing);
+  fireEvent.click(within(screen.getAllByRole("listitem")[0]!).getByRole("button", { name: /Play saved progression/ }));
+  expect(sequence).toHaveBeenCalledWith(["Am", "F", "C"].map((chord) => {
+    const result = resolveChord(chord);
+    if (result.kind !== "resolved") throw new Error(`${chord} should have catalogued voicings`);
+    return result.voicings[0];
+  }));
   fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
   fireEvent.click(screen.getAllByRole("button", { name: "Delete" })[0]!);
   await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/vibes/1", { method: "DELETE" }));
