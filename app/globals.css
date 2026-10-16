@@ -224,7 +224,7 @@ html[data-motion-boot="pending"] [data-intro] { visibility: hidden; }
   .progression-result > :first-child button { min-height: 1.85rem; padding-inline: .65rem; }
   .chord-playback > div:first-child { gap: .4rem; }
   .chord-playback > div:first-child button { min-height: 2rem; padding: .3rem .65rem; }
-  .progression-grid { gap: .4rem; }
+  .progression-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; }
   .progression-grid > li { gap: .35rem; padding: .55rem; }
   .progression-grid > li > figure { grid-template-columns: minmax(0, 1fr) minmax(0, 58%); column-gap: .35rem; }
   .chord-diagram-button { max-width: none; }
