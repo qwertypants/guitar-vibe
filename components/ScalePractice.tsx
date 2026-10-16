@@ -8,7 +8,7 @@ export function ScalePractice({ scale, rows, positions, midiNotes, active, onPla
   const host = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
   const [renderError, setRenderError] = useState(false);
-  const source = scaleFretboardToVexTab(positions);
+  const source = scaleFretboardToVexTab(midiNotes, positions);
 
   useEffect(() => {
     const container = host.current;

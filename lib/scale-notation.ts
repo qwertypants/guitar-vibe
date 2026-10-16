@@ -22,14 +22,15 @@ export function getProgressionScalePractice(chords: readonly string[]) {
   return scale ? { scale, ...getScaleFretboard(scale) } : null;
 }
 
-export function scaleFretboardToVexTab(positions: readonly ScaleFretPosition[]): string {
-  const groups = Array.from({ length: 13 }, (_, fret) => positions.filter((position) => position.fret === fret))
-    .filter((group) => group.length > 0)
-    .map((group) => {
-      const notes = group.map(({ fret, stringNumber }) => `${fret}/${stringNumber}`).join(".");
-      return `:q ${group.length > 1 ? `(${notes})` : notes}`;
-    });
-  return `tabstave notation=true tablature=true tuning=standard strings=6 time=4/4\nnotes ${groups.join(" ")}`;
+export function scaleFretboardToVexTab(midiNotes: readonly number[], positions: readonly ScaleFretPosition[]): string {
+  const run = midiNotes.map((midi) => {
+    const position = positions
+      .filter((candidate) => candidate.midi === midi)
+      .sort((a, b) => a.fret - b.fret || a.stringNumber - b.stringNumber)[0];
+    if (!position) throw new Error(`Scale pitch ${midi} has no fretboard position.`);
+    return `${position.fret}/${position.stringNumber}`;
+  });
+  return `tabstave notation=true tablature=true tuning=standard strings=6 time=4/4\nnotes ${run.map((note) => `:q ${note}`).join(" ")}`;
 }
 
 export async function renderScaleVexTab(element: HTMLElement, source: string): Promise<void> {

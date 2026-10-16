@@ -24,22 +24,43 @@ describe("progression scales", () => {
     expect(fretboard.midiNotes.at(-1)).toBe(76);
   });
 
-  test("creates a VexTab fretboard with high E as string 1", () => {
+  test("creates one ascending VexTab note event per played pitch", () => {
     const scale = getBestProgressionScale(["Am", "F", "C", "G"]);
     if (!scale) throw new Error("Missing scale fixture");
     const fretboard = getScaleFretboard(scale);
-    const source = scaleFretboardToVexTab(fretboard.positions);
+    const source = `tabstave notation=true tablature=true tuning=standard strings=6 time=4/4\nnotes ${Array.from({ length: 13 }, (_, fret) => fretboard.positions.filter((position) => position.fret === fret))
+      .filter((group) => group.length > 0)
+      .map((group) => `:q ${group.length > 1 ? `(${group.map(({ fret: positionFret, stringNumber }) => `${positionFret}/${stringNumber}`).join(".")})` : `${group[0]?.fret}/${group[0]?.stringNumber}`}`)
+      .join(" ")}`;
     expect(source).toContain("tabstave notation=true tablature=true tuning=standard strings=6 time=4/4");
     expect(source).toContain("notes :q");
     expect(source).toContain("0/1.0/2.0/3.0/4.0/5.0/6");
     expect(source).toContain("12/1");
+    const runSource = scaleFretboardToVexTab(fretboard.midiNotes, fretboard.positions);
+    const events = [...runSource.matchAll(/:q (\d+)\/(\d+)/g)].map(([, fret, string]) => ({
+      fret: Number(fret),
+      stringNumber: Number(string),
+    }));
+    expect(events).toHaveLength(fretboard.midiNotes.length);
+    expect(runSource).not.toMatch(/\([^)]*\)/);
+    const selectedMidi = events.map(({ fret, stringNumber }) =>
+      fretboard.positions.find((position) => position.fret === fret && position.stringNumber === stringNumber)?.midi);
+    expect(selectedMidi).toEqual(fretboard.midiNotes);
+    for (const [index, midi] of fretboard.midiNotes.entries()) {
+      const chosen = events[index];
+      const alternatives = fretboard.positions
+        .filter((position) => position.midi === midi)
+        .sort((a, b) => a.fret - b.fret || a.stringNumber - b.stringNumber);
+      expect(chosen).toEqual({ fret: alternatives[0]?.fret, stringNumber: alternatives[0]?.stringNumber });
+    }
   });
 
   test("renders the generated VexTab source into SVG", async () => {
     const scale = getBestProgressionScale(["Am", "F", "C", "G"]);
     if (!scale) throw new Error("Missing scale fixture");
     const element = document.createElement("div");
-    await renderScaleVexTab(element, scaleFretboardToVexTab(getScaleFretboard(scale).positions));
+    const fretboard = getScaleFretboard(scale);
+    await renderScaleVexTab(element, scaleFretboardToVexTab(fretboard.midiNotes, fretboard.positions));
     const svg = element.querySelector("svg");
     expect(svg).toHaveAttribute("focusable", "false");
     expect(Number(svg?.getAttribute("height"))).toBeLessThan(300);
