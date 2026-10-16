@@ -9,7 +9,7 @@ import { join } from "node:path";
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 const melancholy = { id: "sad", vibeIds: ["mood-melancholy"], expectations: ["minor"], holdout: false } as const;
 const blues = { ...melancholy, id: "blues", expectations: ["blues"] } as const;
-const sample = (chords: string[], caseId = "sad", wallMs = 10): Sample => ({ kind: "accepted", phase: "scored", caseId, seed: 42, variation: "familiar", requestedCandidates: 3, usableCandidates: 2, chords, metrics: { wallMs, loadMs: 1, generationMs: 2, promptTokens: 20, outputTokens: 10, requestedCandidates: 3, usableCandidates: 2 }, score: scoreProgression(melancholy, chords) });
+const sample = (chords: string[], caseId = "sad", wallMs = 10) => ({ kind: "accepted" as const, phase: "scored" as const, caseId, seed: 42, variation: "familiar" as const, requestedCandidates: 3, usableCandidates: 2, chords, metrics: { wallMs, loadMs: 1, generationMs: 2, promptTokens: 20, outputTokens: 10, requestedCandidates: 3, usableCandidates: 2, fallbackUsed: false }, score: scoreProgression(melancholy, chords) });
 describe("musical proxies", () => {
   it("rejects unsupported and unvaried progressions", () => {
     expect(scoreProgression(melancholy, ["Am", "wat", "G"]).valid).toBe(false);
@@ -49,6 +49,14 @@ describe("aggregation", () => {
     expect(result.proxyPassRate).toBe(0.5);
     expect(chooseWinner([result])).toBe(null);
   });
+  it("does not count fallback output as a model pass", () => {
+    const samples = [["Am", "F", "G"], ["Dm", "G", "Am"], ["Em", "Am", "Dm"]].map((chords, index) => {
+      const accepted = sample(chords, `minor-${index}`);
+      return index === 0 ? { ...accepted, metrics: { ...accepted.metrics, fallbackUsed: true } } : accepted;
+    });
+    const result = aggregate("fallback-model", samples, null);
+    expect(result).toMatchObject({ validRate: 1, proxyPassRate: 1, fallbackCount: 1, distinctProgressions: 3, passes: false });
+  });
   it("uses nearest-rank percentiles and excludes first/warmup", () => {
     expect(percentile([], 0.5)).toBe(null);
     expect(percentile([4, 1, 2, 3], 0.5)).toBe(2);
@@ -65,6 +73,18 @@ describe("aggregation", () => {
   });
 });
 describe("CLI and execution", () => {
+  it("benchmarks valid fallback progressions and reports every fallback separately", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({
+      message: { role: "assistant", content: "not JSON" }, done: true, done_reason: "stop",
+      load_duration: 0, prompt_eval_count: 0, eval_count: 0, eval_duration: 0,
+    })));
+    const result = await runBenchmark({ models: ["qwen2.5:1.5b"], runs: 1, out: "/tmp/unused", variation: "familiar" });
+    const model = result.models[0];
+    expect(model?.summary).toMatchObject({ sampleCount: CASES.length, failureCount: 0, validRate: 1, fallbackCount: CASES.length, passes: false });
+    expect(model?.samples.filter(sample => sample.phase === "scored").every(sample =>
+      sample.kind === "accepted" && sample.metrics.fallbackUsed && sample.score.valid,
+    )).toBe(true);
+  });
   it.each([["--runs", "0"], ["--runs", "1.5"], ["--what", "x"], ["--models", ""], ["--models", "cloud-model"], ["--out"]])("rejects invalid args %j", (...args) => {
     expect(() => parseArgs(args)).toThrow();
   });
@@ -88,7 +108,7 @@ describe("CLI and execution", () => {
     const generate = vi.fn(async (_ids: readonly string[], options: { model?: string; seed?: number; variation?: string } = {}) => {
       expect(active++).toBe(0); calls.push(options); await Promise.resolve(); active--;
       if (options.model === "missing") throw new Error("unavailable");
-      return { chords: ["Am", "F", "G"], metrics: {wallMs: 1, loadMs: 0, generationMs: 1, promptTokens: 1, outputTokens: 1, requestedCandidates: 3, usableCandidates: 2} };
+      return { chords: ["Am", "F", "G"], metrics: {wallMs: 1, loadMs: 0, generationMs: 1, promptTokens: 1, outputTokens: 1, requestedCandidates: 3, usableCandidates: 2, fallbackUsed: false} };
     });
     const inspect = vi.fn(async () => ({ error: "offline" }));
     const result = await runBenchmark({ models: ["missing", "good"], runs: 2, out: "/tmp/unused", variation: "richer" }, { generate, inspect });
@@ -108,7 +128,7 @@ describe("real adapter boundary and metadata", () => {
       if (new URL(url).pathname === "/api/version") return Response.json({version: "0.40.2"});
       return Response.json({});
     }));
-    const generate = vi.fn(async () => ({chords: ["Am", "F", "G"], metrics: {wallMs: 1, loadMs: 0, generationMs: 1, promptTokens: 1, outputTokens: 1, requestedCandidates: 3, usableCandidates: 1}}));
+    const generate = vi.fn(async () => ({chords: ["Am", "F", "G"], metrics: {wallMs: 1, loadMs: 0, generationMs: 1, promptTokens: 1, outputTokens: 1, requestedCandidates: 3, usableCandidates: 1, fallbackUsed: false}}));
     const inspect = vi.fn(async () => ({error: "not needed"}));
     const report = await runBenchmark({models: ["qwen2.5:1.5b"], runs: 1, out: "/tmp/unused", variation: "familiar"}, {generate, inspect});
     expect(report.ollama.version).toBe("0.40.2");

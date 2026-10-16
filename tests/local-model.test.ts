@@ -1,9 +1,9 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
-import { generateLocalProgression, LocalModelError, selectProgressionCandidate } from "@/lib/server/local-model";
+import { generateLocalProgression, generateLocalProgressionWithFallback, LocalModelError, selectProgressionCandidate } from "@/lib/server/local-model";
 import { SUPPORTED_CHORDS } from "@/lib/chords";
-import { resolveProgression } from "@/lib/progression";
+import { progressionSchema, resolveProgression } from "@/lib/progression";
 
 const ids = ["mood-melancholy", "genre-jazz"];
 const chords = ["Am7", "Dm7", "G7", "Cmaj7"];
@@ -108,6 +108,26 @@ describe("local generation", () => {
   it("rejects output when no candidate is coherent and playable", async () => {
     network.mockResolvedValue(Response.json(envelope(JSON.stringify(candidateSet([["C", "F#", "C#", "D#"], ["C", "F", "G13"]])))));
     await expect(generateLocalProgression(ids)).rejects.toMatchObject({ code: "invalid_output" });
+  });
+  it.each([
+    ["familiar", ids],
+    ["richer", ids],
+    ["adventurous", ids],
+    ["familiar", ["genre-blues"]],
+  ] as const)("returns a valid fallback for invalid %s model output", async (variation, vibeIds) => {
+    network.mockResolvedValue(Response.json(envelope("not JSON")));
+    const result = await generateLocalProgressionWithFallback(vibeIds, { variation });
+    expect(result.metrics.fallbackUsed).toBe(true);
+    expect(progressionSchema.safeParse({ chords: result.chords }).success).toBe(true);
+    expect(resolveProgression(result.chords)).not.toBeNull();
+    expect(new Set(result.chords).size).toBeGreaterThanOrEqual(2);
+  });
+  it("returns a valid fallback when every structured candidate is incoherent", async () => {
+    network.mockResolvedValue(Response.json(envelope(JSON.stringify(candidateSet([["C", "F#", "C#", "D#"]])))));
+    const result = await generateLocalProgressionWithFallback(ids);
+    expect(result.metrics.fallbackUsed).toBe(true);
+    expect(progressionSchema.safeParse({ chords: result.chords }).success).toBe(true);
+    expect(resolveProgression(result.chords)).not.toBeNull();
   });
   it("filters a canonical candidate when trusted voicing resolution fails", () => {
     const selected = selectProgressionCandidate(candidateSet([["Am", "F", "G"], ["C", "F", "G"]]).candidates,

@@ -5,7 +5,7 @@ import { arch, cpus, platform, release, totalmem } from "node:os";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { variationModeSchema, type VariationMode } from "../lib/variation";
-import { generateLocalProgression, getLocalModelConfig, LOCAL_MODEL_PROMPT_TEMPLATE, LocalModelError } from "../lib/server/local-model";
+import { generateLocalProgressionWithFallback, getLocalModelConfig, LOCAL_MODEL_PROMPT_TEMPLATE, LocalModelError } from "../lib/server/local-model";
 import { CASES } from "./cases";
 import { aggregate, chooseWinner, scoreProgression, type Sample } from "./scoring";
 
@@ -78,8 +78,8 @@ async function inspectOllamaVersion(baseUrl: string): Promise<string | null> {
   catch { return null; }
 }
 type Inspection = Awaited<ReturnType<typeof inspectModel>> | { error: string };
-type Dependencies = { generate: typeof generateLocalProgression; inspect: (model: string, baseUrl: string) => Promise<Inspection> };
-export async function runBenchmark(options: CliOptions, deps: Dependencies = { generate: generateLocalProgression, inspect: inspectModel }) {
+type Dependencies = { generate: typeof generateLocalProgressionWithFallback; inspect: (model: string, baseUrl: string) => Promise<Inspection> };
+export async function runBenchmark(options: CliOptions, deps: Dependencies = { generate: generateLocalProgressionWithFallback, inspect: inspectModel }) {
   const models: { model: string; metadataBefore: Inspection; metadataAfter: Inspection; samples: Sample[]; summary: ReturnType<typeof aggregate> }[] = [];
   const baseUrl = getLocalModelConfig().baseUrl;
   const ollamaVersion = await inspectOllamaVersion(baseUrl);

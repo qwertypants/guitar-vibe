@@ -80,6 +80,29 @@ export function selectProgressionCandidate(rawCandidates: readonly unknown[], va
   const selected = survivors[0];
   return selected ? { chords: selected.chords, usableCandidates: survivors.length } : null;
 }
+
+function getFallbackProgression(labels: readonly string[], variation: VariationMode): string[] {
+  const isBlues = labels.includes("genre: Blues");
+  const isJazz = labels.some((label) => label === "genre: Jazz" || label === "genre: Neo-soul");
+  const isMinor = labels.some((label) => label === "mood: Melancholy" || label === "mood: Dark");
+  const chords = isBlues ? ["E7", "A7", "B7"]
+    : isJazz && isMinor ? ["Am7", "Dm7", "G7", "Cmaj7"]
+      : isJazz ? ["Cmaj7", "Am7", "Fmaj7", "G7"]
+        : isMinor && variation === "richer" ? ["Am7", "Dm7", "E7", "Am7"]
+          : isMinor && variation === "adventurous" ? ["Am", "Dsus4", "E7", "Am"]
+            : isMinor ? ["Am", "F", "G"]
+              : variation === "richer" ? ["Cmaj7", "Am7", "Fmaj7", "G7"]
+                : variation === "adventurous" ? ["C", "Am", "Dsus4", "G"]
+                  : ["C", "F", "G"];
+  const parsed = progressionSchema.safeParse({ chords });
+  const resolved = parsed.success ? resolveProgression(parsed.data.chords) : null;
+  const harmony = assessProgressionHarmony(chords, isBlues);
+  if (!parsed.success || !resolved || resolved.some((card, index) => card.symbol !== chords[index] || card.voicings.length === 0) ||
+    new Set(chords).size < 2 || !harmony.coherent) {
+    throw new Error("Configured fallback progression failed validation.");
+  }
+  return chords;
+}
 const envelopeSchema = z.object({
   message: z.object({ role: z.literal("assistant"), content: z.string() }),
   done: z.literal(true),
@@ -108,10 +131,7 @@ function parseJson(text: string): unknown {
   try { return JSON.parse(text); } catch { throw new LocalModelError("invalid_output"); }
 }
 
-export async function generateLocalProgression(vibeIds: readonly string[], options: GenerationOptions = {}): Promise<{
-  chords: string[];
-  metrics: { wallMs: number; loadMs: number; promptTokens: number; outputTokens: number; generationMs: number; requestedCandidates: number; usableCandidates: number };
-}> {
+export async function generateLocalProgression(vibeIds: readonly string[], options: GenerationOptions = {}) {
   const request = progressionRequestSchema.safeParse({ vibeIds });
   const labels = request.success ? getVibeLabels(request.data.vibeIds) : null;
   if (!labels) throw new LocalModelError("invalid_input");
@@ -188,7 +208,8 @@ export async function generateLocalProgression(vibeIds: readonly string[], optio
       chords: selected.chords,
       metrics: { wallMs: performance.now() - started, loadMs: envelope.data.load_duration / 1_000_000,
         promptTokens: envelope.data.prompt_eval_count, outputTokens: envelope.data.eval_count,
-        generationMs: envelope.data.eval_duration / 1_000_000, requestedCandidates: REQUESTED_CANDIDATES, usableCandidates: selected.usableCandidates },
+        generationMs: envelope.data.eval_duration / 1_000_000, requestedCandidates: REQUESTED_CANDIDATES,
+        usableCandidates: selected.usableCandidates, fallbackUsed: false },
     };
   } catch (cause) {
     if (controller.signal.aborted) throw new LocalModelError("timeout");
@@ -198,5 +219,23 @@ export async function generateLocalProgression(vibeIds: readonly string[], optio
     clearTimeout(timer);
     options.signal?.removeEventListener("abort", abort);
     reader?.releaseLock();
+  }
+}
+
+export async function generateLocalProgressionWithFallback(vibeIds: readonly string[], options: GenerationOptions = {}) {
+  const started = performance.now();
+  try {
+    return await generateLocalProgression(vibeIds, options);
+  } catch (cause) {
+    if (!(cause instanceof LocalModelError) || cause.code !== "invalid_output") throw cause;
+    const request = progressionRequestSchema.safeParse({ vibeIds });
+    const labels = request.success ? getVibeLabels(request.data.vibeIds) : null;
+    if (!labels) throw new LocalModelError("invalid_input");
+    const chords = getFallbackProgression(labels, options.variation ?? "familiar");
+    return {
+      chords,
+      metrics: { wallMs: performance.now() - started, loadMs: 0, promptTokens: 0, outputTokens: 0,
+        generationMs: 0, requestedCandidates: REQUESTED_CANDIDATES, usableCandidates: 0, fallbackUsed: true },
+    };
   }
 }

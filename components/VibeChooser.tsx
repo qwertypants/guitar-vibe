@@ -21,6 +21,7 @@ export function VibeChooser() {
   const [variation, setVariation] = useState<VariationMode>("familiar");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fallbackUsed, setFallbackUsed] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
@@ -117,6 +118,7 @@ export function VibeChooser() {
         throw new Error(message);
       }
       setProgression(payload.chords as ProgressionCard[]);
+      setFallbackUsed("fallbackUsed" in payload && payload.fallbackUsed === true);
       setGeneratedSelection(selection);
       // Mount the result before the chooser leaves so the play view is ready when shown.
       const outgoing = choosePanel.current;
@@ -191,7 +193,8 @@ export function VibeChooser() {
         {error && <p role="alert" className="text-sm">{error}</p>}
         </div>
         {progression && <div ref={playPanel} hidden={view !== "play"} className="play-panel space-y-5">
-          <><ProgressionResult key={JSON.stringify(progression)} chords={progression} active={view === "play" && !transitioning} onEditVibe={() => switchView("choose")} />
+          <>{fallbackUsed && <p role="status" className="text-sm text-muted">The model response could not be validated, so this progression uses a trusted fallback.</p>}
+          <ProgressionResult key={JSON.stringify(progression)} chords={progression} active={view === "play" && !transitioning} onEditVibe={() => switchView("choose")} />
           <div className="flex items-center gap-3"><button type="button" disabled={saving} onClick={() => void saveVibe()} className="min-h-11 rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground disabled:opacity-50">{saving ? "Saving…" : "Save vibe"}</button>
             {saveMessage && <p role="status" className="text-sm text-muted">{saveMessage}</p>}</div></>
         </div>}

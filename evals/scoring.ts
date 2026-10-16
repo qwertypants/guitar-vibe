@@ -3,7 +3,7 @@ import { CHORD_INTERVALS, SUPPORTED_CHORDS } from "../lib/chords";
 import { progressionSchema, resolveProgression } from "../lib/progression";
 import type { VariationMode } from "../lib/variation";
 export type Score = { valid: boolean; coherent: boolean; proxyPass: boolean; reasons: string[] };
-export type Sample = { phase: "first-request" | "discarded-warmup" | "scored"; caseId: string; seed: number; variation: VariationMode; requestedCandidates: number; usableCandidates: number } & ({ kind: "accepted"; chords: string[]; metrics: { wallMs: number; loadMs: number; generationMs: number; promptTokens: number; outputTokens: number; requestedCandidates: number; usableCandidates: number }; score: Score } | { kind: "failed"; error: string; wallMs: number });
+export type Sample = { phase: "first-request" | "discarded-warmup" | "scored"; caseId: string; seed: number; variation: VariationMode; requestedCandidates: number; usableCandidates: number } & ({ kind: "accepted"; chords: string[]; metrics: { wallMs: number; loadMs: number; generationMs: number; promptTokens: number; outputTokens: number; requestedCandidates: number; usableCandidates: number; fallbackUsed: boolean }; score: Score } | { kind: "failed"; error: string; wallMs: number });
 export function scoreProgression(fixture: EvalCase, chords: readonly string[]): Score {
   const parsed = progressionSchema.safeParse({ chords });
   const resolved = parsed.success ? resolveProgression(parsed.data.chords) : null;
@@ -62,6 +62,7 @@ export function percentile(values: readonly number[], p: number): number | null 
 export function aggregate(model: string, samples: readonly Sample[], loadedBytes: number | null) {
   const scored = samples.filter(s => s.phase === "scored");
   const accepted = scored.filter(s => s.kind === "accepted");
+  const fallbackCount = accepted.filter(s => s.metrics.fallbackUsed).length;
   const validRate = scored.length ? accepted.filter(s => s.score.valid).length / scored.length : 0;
   const proxyPassRate = scored.length ? accepted.filter(s => s.score.proxyPass).length / scored.length : 0;
   const distinctProgressions = new Set(accepted.filter(s => s.score.valid).map(s => JSON.stringify(s.chords))).size;
@@ -71,7 +72,7 @@ export function aggregate(model: string, samples: readonly Sample[], loadedBytes
   return { model, loadedBytes, sampleCount: scored.length, failureCount: scored.length - accepted.length, validRate, proxyPassRate,
     requestedCandidateCount: candidateSamples.reduce((sum, sample) => sum + sample.requestedCandidates, 0),
     usableCandidateCount: candidateSamples.reduce((sum, sample) => sum + sample.usableCandidates, 0),
-    distinctProgressions, passes: scored.length > 0 && validRate === 1 && proxyPassRate >= 0.8 && distinctProgressions >= 3,
+    fallbackCount, distinctProgressions, passes: scored.length > 0 && validRate === 1 && fallbackCount === 0 && proxyPassRate >= 0.8 && distinctProgressions >= 3,
     p50WarmWallMs: percentile(latencies, 0.5), p95WarmWallMs: percentile(latencies, 0.95), maximumLoadMs: loadTimes.length ? Math.max(...loadTimes) : null };
 }
 export function chooseWinner(summaries: readonly ReturnType<typeof aggregate>[]): string | null {

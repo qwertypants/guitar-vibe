@@ -43,6 +43,17 @@ test.each(variationModeOptions)("sends the selected $value mode and keeps the re
   expect(screen.getByRole("group", { name: "Guitar position for Am, chord 1" })).toBeVisible();
 });
 
+test("shows when a trusted fallback progression was used", async () => {
+  const chords = resolveProgression(["C", "F", "G"]);
+  if (!chords) throw new Error("Missing progression fixture");
+  vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ chords, fallbackUsed: true }));
+  render(<Home />);
+  fireEvent.click(screen.getByRole("button", { name: "Moody" }));
+  fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
+  expect(await screen.findByText(/trusted fallback/)).toHaveAttribute("role", "status");
+  expect(screen.getByRole("button", { name: "Play C, Open position" })).toBeVisible();
+});
+
 test("keeps the selected variation through a pending request and generation error", async () => {
   let resolveRequest: ((response: Response) => void) | undefined;
   vi.spyOn(globalThis, "fetch").mockImplementationOnce(() => new Promise<Response>((resolve) => { resolveRequest = resolve; }));

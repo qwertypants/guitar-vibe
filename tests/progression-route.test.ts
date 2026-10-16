@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { POST } from "@/app/api/progression/route";
+import { progressionErrorResponse } from "@/app/api/progression/errors";
 import { resolveProgression } from "@/lib/progression";
 const network = vi.fn<typeof fetch>();
 const symbols = ["Am", "F", "C", "G"];
@@ -55,9 +56,16 @@ it("maps provider failure to 503 and logs only bounded codes", async () => {
   expect(response.status).toBe(503);
   expect(console.error).toHaveBeenCalledWith("[progression] local generation failed", { code: "unavailable" });
 });
-it("maps invalid output to 502 without returning model text", async () => {
+it("returns a trusted fallback for invalid model output and keeps the final resolver guard", async () => {
   network.mockResolvedValue(Response.json({ ...valid, message: { role: "assistant", content: "sensitive invalid content" } }));
-  const response = await POST(request({ vibeIds: ["genre-jazz"] }));
+  const fallbackResponse = await POST(request({ vibeIds: ["genre-jazz"] }));
+  expect(fallbackResponse.status).toBe(200);
+  const fallbackPayload = await fallbackResponse.json();
+  expect(fallbackPayload).toMatchObject({ fallbackUsed: true });
+  expect(JSON.stringify(fallbackPayload)).not.toContain("sensitive");
+  expect(fallbackPayload.chords).toEqual(resolveProgression(fallbackPayload.chords.map((chord: { symbol: string }) => chord.symbol)));
+
+  const response = progressionErrorResponse("invalid_output");
   expect(response.status).toBe(502);
   expect(JSON.stringify(await response.json())).not.toContain("sensitive");
 });
