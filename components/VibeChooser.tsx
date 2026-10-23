@@ -19,6 +19,7 @@ export function VibeChooser() {
   const [view, setView] = useState<"choose" | "play">("choose");
   const [generatedSelection, setGeneratedSelection] = useState<VibeSelection>({});
   const [variation, setVariation] = useState<VariationMode>("familiar");
+  const [generatedVariation, setGeneratedVariation] = useState<VariationMode>("familiar");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fallbackUsed, setFallbackUsed] = useState(false);
@@ -102,14 +103,14 @@ export function VibeChooser() {
   };
   const summarySelection = view === "play" ? generatedSelection : selection;
 
-  const generate = async () => {
+  const generate = async (source: VibeSelection, mode: VariationMode) => {
     setPending(true);
     setError(null);
     try {
       const response = await fetch("/api/progression", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ vibeIds: getSelectedVibes(selection).map((vibe) => vibe.id), variation }),
+        body: JSON.stringify({ vibeIds: getSelectedVibes(source).map((vibe) => vibe.id), variation: mode }),
       });
       const payload: unknown = await response.json();
       if (!response.ok || typeof payload !== "object" || payload === null || !("chords" in payload) || !Array.isArray(payload.chords)) {
@@ -119,7 +120,10 @@ export function VibeChooser() {
       }
       setProgression(payload.chords as ProgressionCard[]);
       setFallbackUsed("fallbackUsed" in payload && payload.fallbackUsed === true);
-      setGeneratedSelection(selection);
+      setGeneratedSelection(source);
+      setGeneratedVariation(mode);
+      setSaveMessage(null);
+      if (view === "play") return;
       // Mount the result before the chooser leaves so the play view is ready when shown.
       const outgoing = choosePanel.current;
       if (!outgoing || reducedMotion()) setView("play");
@@ -180,7 +184,7 @@ export function VibeChooser() {
           </div>
         </div>
         <div className="generation-actions flex gap-3 flex-wrap">
-          <button data-intro data-generate type="button" disabled={!hasVibeSelection(selection) || pending || transitioning} onClick={() => void generate()}
+          <button data-intro data-generate type="button" disabled={!hasVibeSelection(selection) || pending || transitioning} onClick={() => void generate(selection, variation)}
             className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto">
             <UiIcon name="generate" />
             {pending ? "Finding your chords…" : progression ? "Generate another" : "Generate progression"}
@@ -194,9 +198,12 @@ export function VibeChooser() {
         </div>
         {progression && <div ref={playPanel} hidden={view !== "play"} className="play-panel space-y-5">
           <>{fallbackUsed && <p role="status" className="text-sm text-muted">The model response could not be validated, so this progression uses a trusted fallback.</p>}
-          <ProgressionResult key={JSON.stringify(progression)} chords={progression} active={view === "play" && !transitioning} onEditVibe={() => switchView("choose")} />
-          <div className="flex items-center gap-3"><button type="button" disabled={saving} onClick={() => void saveVibe()} className="min-h-11 rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground disabled:opacity-50">{saving ? "Saving…" : "Save vibe"}</button>
+          <ProgressionResult key={JSON.stringify(progression)} chords={progression} active={view === "play" && !transitioning && !pending} onEditVibe={() => switchView("choose")} />
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" disabled={pending || transitioning} onClick={() => void generate(generatedSelection, generatedVariation)} className="min-h-11 rounded-full border border-foreground/20 px-4 text-sm font-medium disabled:opacity-50">{pending ? "Finding your chords…" : "re-vibe"}</button>
+            <button type="button" disabled={saving || pending} onClick={() => void saveVibe()} className="min-h-11 rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground disabled:opacity-50">{saving ? "Saving…" : "Save vibe"}</button>
             {saveMessage && <p role="status" className="text-sm text-muted">{saveMessage}</p>}</div></>
+          {error && <p role="alert" className="text-sm">{error}</p>}
         </div>}
       </Tabs>
     </div>

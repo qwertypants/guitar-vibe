@@ -87,6 +87,50 @@ test("saving a generated progression sends its creation facets and chord symbols
   expect(await screen.findByText("Vibe saved to My Vibes.")).toHaveAttribute("role", "status");
 });
 
+test("re-vibe uses the Play selection and variation, then replaces the progression", async () => {
+  const first = resolveProgression(["Am", "F", "C"]);
+  const second = resolveProgression(["C", "G", "Am"]);
+  if (!first || !second) throw new Error("Missing progression fixture");
+  let finishReVibe: ((response: Response) => void) | undefined;
+  const fetch = vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(Response.json({ chords: first }))
+    .mockImplementationOnce(() => new Promise<Response>((resolve) => { finishReVibe = resolve; }));
+  render(<Home />);
+  fireEvent.click(screen.getByRole("button", { name: "Moody" }));
+  fireEvent.click(screen.getByRole("button", { name: /Adventurous/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
+  await waitFor(() => expect(screen.getByRole("tab", { name: "Play", selected: true })).toBeVisible());
+  fireEvent.click(screen.getByRole("tab", { name: "Choose vibe" }));
+  fireEvent.click(screen.getByRole("button", { name: "Dreamy" }));
+  fireEvent.click(screen.getByRole("button", { name: /Familiar/ }));
+  fireEvent.click(screen.getByRole("tab", { name: "Play" }));
+  fireEvent.click(screen.getByRole("button", { name: "re-vibe" }));
+  expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body))).toEqual({ vibeIds: ["mood-moody"], variation: "adventurous" });
+  expect(screen.getByRole("button", { name: "Finding your chords…" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Save vibe" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Play Am, Open position" })).toBeVisible();
+  finishReVibe?.(Response.json({ chords: second }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Play C, Open position" })).toBeVisible());
+  expect(screen.getByRole("button", { name: "re-vibe" })).toBeEnabled();
+  expect(screen.getByRole("tabpanel", { name: "Play" })).toHaveTextContent("Moody");
+});
+
+test("a failed re-vibe keeps the current chords and shows the error in Play", async () => {
+  const chords = resolveProgression(["Am", "F", "C"]);
+  if (!chords) throw new Error("Missing progression fixture");
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(Response.json({ chords }))
+    .mockResolvedValueOnce(Response.json({ error: "Try again" }, { status: 502 }));
+  render(<Home />);
+  fireEvent.click(screen.getByRole("button", { name: "Moody" }));
+  fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "re-vibe" })).toBeVisible());
+  fireEvent.click(screen.getByRole("button", { name: "re-vibe" }));
+  await waitFor(() => expect(screen.getAllByRole("alert").some((alert) => alert.textContent === "Try again")).toBe(true));
+  expect(screen.getByRole("button", { name: "Play Am, Open position" })).toBeVisible();
+  expect(screen.getByRole("button", { name: "re-vibe" })).toBeEnabled();
+});
+
 test("More and help are absent", () => {
   render(<Home />);
   expect(screen.queryByRole("button", { name: "More" })).not.toBeInTheDocument();
