@@ -42,7 +42,12 @@ export function Tabs<T extends string>({ label, items, value, onChange, children
     });
   }, { scope: bar, dependencies: [value] });
   useEffect(() => {
-    if (previous.current !== value) document.getElementById(`${id}-${value}`)?.focus();
+    if (previous.current !== value) {
+      const panel = document.getElementById(`${id}-panel`);
+      const focused = document.activeElement;
+      const contentHasFocus = focused instanceof HTMLElement && panel?.contains(focused) && !focused.closest("[hidden]");
+      if (!contentHasFocus) document.getElementById(`${id}-${value}`)?.focus();
+    }
     previous.current = value;
   }, [id, value]);
   return <div className="space-y-5">
