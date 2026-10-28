@@ -35,6 +35,17 @@ it("saves, reloads, rejects invalid payloads, and deletes a saved vibe", async (
   expect((await DELETE(new Request(`http://localhost/api/vibes/${body.vibe.id}`, { method: "DELETE" }), { params: Promise.resolve({ id: String(body.vibe.id) }) })).status).toBe(204);
   expect((await DELETE(new Request("http://localhost/api/vibes/999", { method: "DELETE" }), { params: Promise.resolve({ id: "999" }) })).status).toBe(404);
   expect((await GET().json() as { vibes: unknown[] }).vibes).toEqual([]);
+  const progressions = {
+    original: { id: "original", label: "Original", chords: ["Am", "F", "C"] },
+    variations: [
+      { id: "variation-1", label: "Variation 1 · Dreamy", direction: { kind: "mood", moodId: "mood-dreamy" }, chords: ["C", "F", "G"] },
+      { id: "variation-2", label: "Variation 2 · Surprise", direction: { kind: "surprise" }, chords: ["Dm", "G", "C"] },
+    ],
+  };
+  const collectionSave = await POST(new Request("http://localhost/api/vibes", { method: "POST", body: JSON.stringify({ vibeIds: ["mood-dreamy"], chords: ["Am", "F", "C"], progressions }) }));
+  expect(collectionSave.status).toBe(201);
+  expect((await collectionSave.json()).vibe.progressions).toEqual(progressions);
+  expect((await GET().json()).vibes[0].progressions).toEqual(progressions);
   const database = new Database(path.join(folder, "vibes.sqlite"));
   database.exec("DROP TABLE vibes");
   database.close();

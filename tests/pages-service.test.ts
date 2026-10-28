@@ -46,3 +46,28 @@ test("uses browser persistence and rejects unknown, duplicate or empty selection
   await vibeService.delete(1);
   expect(await vibeService.list()).toEqual([]);
 });
+
+
+test.each(["pages", "server"])("%s service saves collections and normalizes legacy list records", async (mode) => {
+  vi.stubEnv("NEXT_PUBLIC_APP_MODE", mode);
+  const legacy = { id: 1, createdAt: "2026-10-28T12:00:00Z", vibeIds: ["mood-dreamy"], chords: ["C", "F", "G"] };
+  const { createProgressionSession, beginProgressionVariation, completeProgressionVariation } = await import("@/lib/progression-session");
+  let session = createProgressionSession(legacy);
+  session = completeProgressionVariation(beginProgressionVariation(session, { kind: "mood", moodId: "mood-dreamy" }), ["Am", "F", "C"]);
+  session = completeProgressionVariation(beginProgressionVariation(session, { kind: "surprise" }), ["Dm", "G", "C"]);
+  const snapshot = { vibeIds: session.vibeIds, chords: session.progressions.original.chords, progressions: session.progressions };
+  const fetch = vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({ vibes: [legacy] }));
+  const { BROWSER_VIBES_KEY } = await import("@/lib/browser-vibes-store");
+  localStorage.setItem(BROWSER_VIBES_KEY, JSON.stringify({ nextId: 2, vibes: [legacy] }));
+  const { vibeService } = await import("@/lib/client/vibe-service");
+  expect((await vibeService.list())[0]?.progressions.variations).toEqual([]);
+  await vibeService.save(snapshot);
+  if (mode === "pages") {
+    expect((await vibeService.list())[0]?.progressions).toEqual(session.progressions);
+    expect(fetch).not.toHaveBeenCalled();
+  } else {
+    expect(fetch).toHaveBeenLastCalledWith("/api/vibes", expect.objectContaining({ body: JSON.stringify(snapshot) }));
+    fetch.mockResolvedValue(Response.json({ vibes: [{ ...legacy, ...snapshot }] }));
+    expect((await vibeService.list())[0]?.progressions).toEqual(session.progressions);
+  }
+});

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getFallbackProgression } from "@/lib/builtin-progression";
 import { createBrowserVibesStore } from "@/lib/browser-vibes-store";
 import { getVibeLabels, progressionRequestSchema, resolveProgression } from "@/lib/progression";
-import { savedVibeSchema } from "@/lib/saved-vibe";
+import { savedVibeSchema, type SaveVibeSnapshot } from "@/lib/saved-vibe";
 
 export const isPagesMode = process.env.NEXT_PUBLIC_APP_MODE === "pages";
 async function readResponse(response: Response): Promise<unknown> {
@@ -25,7 +25,7 @@ const browserService = {
     return { chords, fallbackUsed: false };
   },
   async list() { return browserStore.list(); },
-  async save(snapshot: { vibeIds: string[]; chords: string[] }) { browserStore.save(snapshot); },
+  async save(snapshot: SaveVibeSnapshot) { browserStore.save(snapshot); },
   async delete(id: number) { browserStore.delete(id); },
 };
 const httpService: typeof browserService = {

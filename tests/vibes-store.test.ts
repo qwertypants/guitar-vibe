@@ -6,6 +6,7 @@ import { afterEach, expect, it } from "vitest";
 import { vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { createVibesStore } from "@/lib/server/vibes-store";
+import { savedVibeSchema } from "@/lib/saved-vibe";
 import { filterVibes } from "@/lib/vibes-filter";
 
 const folders: string[] = [];
@@ -44,9 +45,9 @@ it.each([
 
 it("filters saved vibes by any selected facet value and restores all on clear", () => {
   const entries = [
-    { id: 1, createdAt: "", vibeIds: ["mood-dreamy", "genre-jazz"], chords: ["Am", "F", "C"] },
-    { id: 2, createdAt: "", vibeIds: ["setting-rainy-night"], chords: ["C", "G", "Am"] },
-  ];
+    { id: 1, createdAt: "2026-10-28T12:00:00Z", vibeIds: ["mood-dreamy", "genre-jazz"], chords: ["Am", "F", "C"] },
+    { id: 2, createdAt: "2026-10-28T12:00:00Z", vibeIds: ["setting-rainy-night"], chords: ["C", "G", "Am"] },
+  ].map((entry) => savedVibeSchema.parse(entry));
   expect(filterVibes(entries, ["genre-jazz", "setting-rainy-night"]).map(({ id }) => id)).toEqual([1, 2]);
   expect(filterVibes(entries, []).map(({ id }) => id)).toEqual([1, 2]);
 });
