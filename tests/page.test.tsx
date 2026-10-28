@@ -87,7 +87,7 @@ test("saving a generated progression sends its creation facets and chord symbols
   expect(await screen.findByText("Vibe saved to My Vibes.")).toHaveAttribute("role", "status");
 });
 
-test("re-vibe uses the Play selection and variation, then replaces the progression", async () => {
+test("a mood variation uses the original Play context and appends without replacing it", async () => {
   const first = resolveProgression(["Am", "F", "C"]);
   const second = resolveProgression(["C", "G", "Am"]);
   if (!first || !second) throw new Error("Missing progression fixture");
@@ -104,18 +104,22 @@ test("re-vibe uses the Play selection and variation, then replaces the progressi
   fireEvent.click(screen.getByRole("button", { name: "Dreamy" }));
   fireEvent.click(screen.getByRole("button", { name: /Familiar/ }));
   fireEvent.click(screen.getByRole("tab", { name: "Play" }));
-  fireEvent.click(screen.getByRole("button", { name: "re-vibe" }));
-  expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body))).toEqual({ vibeIds: ["mood-moody"], variation: "adventurous" });
-  expect(screen.getByRole("button", { name: "Finding your chords…" })).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "Generate mood variation" }));
+  expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body))).toEqual({ vibeIds: ["mood-moody"], variation: "adventurous", exploration: { originalChords: ["Am", "F", "C"], direction: { kind: "mood", moodId: "mood-dreamy" } } });
+  expect(screen.getByRole("button", { name: "Generate mood variation" })).toBeDisabled();
+  expect(screen.getByText("Generating one variation…")).toHaveAttribute("role", "status");
   expect(screen.getByRole("button", { name: "Save vibe" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Play Am, Open position" })).toBeVisible();
   finishReVibe?.(Response.json({ chords: second }));
   await waitFor(() => expect(screen.getByRole("button", { name: "Play C, Open position" })).toBeVisible());
-  expect(screen.getByRole("button", { name: "re-vibe" })).toBeEnabled();
+  expect(await screen.findByText("Variation 1 · Dreamy")).toBeVisible();
+  expect(screen.getByText("C · G · Am")).toBeVisible();
+  expect(screen.getByRole("button", { name: "Play Am, Open position" })).toBeVisible();
+  expect(screen.getByRole("button", { name: "Generate mood variation" })).toBeEnabled();
   expect(screen.getByRole("tabpanel", { name: "Play" })).toHaveTextContent("Moody");
 });
 
-test("a failed re-vibe keeps the current chords and shows the error in Play", async () => {
+test("a failed variation keeps the current chords and shows the error in Play", async () => {
   const chords = resolveProgression(["Am", "F", "C"]);
   if (!chords) throw new Error("Missing progression fixture");
   vi.spyOn(globalThis, "fetch")
@@ -124,11 +128,11 @@ test("a failed re-vibe keeps the current chords and shows the error in Play", as
   render(<Home />);
   fireEvent.click(screen.getByRole("button", { name: "Moody" }));
   fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
-  await waitFor(() => expect(screen.getByRole("button", { name: "re-vibe" })).toBeVisible());
-  fireEvent.click(screen.getByRole("button", { name: "re-vibe" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Generate mood variation" })).toBeVisible());
+  fireEvent.click(screen.getByRole("button", { name: "Generate mood variation" }));
   await waitFor(() => expect(screen.getAllByRole("alert").some((alert) => alert.textContent === "Try again")).toBe(true));
   expect(screen.getByRole("button", { name: "Play Am, Open position" })).toBeVisible();
-  expect(screen.getByRole("button", { name: "re-vibe" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Generate mood variation" })).toBeEnabled();
 });
 
 test("More and help are absent", () => {
@@ -210,4 +214,33 @@ test("generation opens Play, position buttons update diagrams, and a failed repl
   fireEvent.click(screen.getByRole("tab", { name: "Play" }));
   expect(screen.getByRole("heading", { name: "Your chord progression" })).toBeVisible();
   expect(screen.getByRole("tabpanel", { name: "Play" })).toHaveTextContent("Moody");
+});
+
+test("successive mood and surprise actions retain earlier options through invalid output and recovery", async () => {
+  const fetch = vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(Response.json({ chords: resolveProgression(["C", "F", "G"]) }))
+    .mockResolvedValueOnce(Response.json({ chords: resolveProgression(["Am", "F", "C"]) }))
+    .mockResolvedValueOnce(Response.json({ chords: [{ symbol: "unsupported" }, { symbol: "F" }, { symbol: "C" }] }))
+    .mockResolvedValueOnce(Response.json({ chords: resolveProgression(["Dm", "G", "C"]) }));
+  render(<Home />);
+  fireEvent.click(screen.getByRole("button", { name: "Moody" }));
+  fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
+  const moodButton = await screen.findByRole("button", { name: "Generate mood variation" });
+  fireEvent.click(screen.getByRole("radio", { name: "Dark" }));
+  fireEvent.click(moodButton);
+  expect(await screen.findByText("Variation 1 · Dark")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
+  await waitFor(() => expect(screen.getAllByRole("alert").some((alert) => alert.textContent === "This progression could not be played.")).toBe(true));
+  expect(screen.getByText("Variation 1 · Dark")).toBeVisible();
+  expect(screen.queryByText(/Variation 2/)).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Play C, Open position" })).toBeEnabled();
+  fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
+  expect(await screen.findByText("Variation 2 · Surprise")).toBeVisible();
+  expect(screen.getByText("Variation 1 · Dark")).toBeVisible();
+  expect(screen.getByText("Am · F · C")).toBeVisible();
+  expect(screen.getByText("Dm · G · C")).toBeVisible();
+  expect(fetch).toHaveBeenCalledTimes(4);
+  for (const index of [2, 3]) expect(JSON.parse(String(fetch.mock.calls[index]?.[1]?.body))).toEqual({
+    vibeIds: ["mood-moody"], variation: "familiar", exploration: { originalChords: ["C", "F", "G"], direction: { kind: "surprise" } },
+  });
 });

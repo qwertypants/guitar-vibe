@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { progressionRequestSchema, resolveProgression } from "@/lib/progression";
+import { resolveProgression } from "@/lib/progression";
+import { generationRequestSchema, getGenerationContext } from "@/lib/progression-variation";
 import { generateLocalProgressionWithFallback, LocalModelError } from "@/lib/server/local-model";
 import { progressionErrorResponse } from "@/app/api/progression/errors";
 
@@ -11,14 +12,16 @@ export async function POST(request: Request) {
   try { body = await request.json(); } catch {
     return NextResponse.json({ error: "Please choose a few vibe options and try again." }, { status: 400 });
   }
-  const parsedRequest = progressionRequestSchema.safeParse(body);
+  const parsedRequest = generationRequestSchema.safeParse(body);
   if (!parsedRequest.success) {
     return progressionErrorResponse("invalid_input");
   }
   try {
-    const output = await generateLocalProgressionWithFallback(parsedRequest.data.vibeIds, {
+    const context = getGenerationContext(parsedRequest.data);
+    const output = await generateLocalProgressionWithFallback(context.vibeIds, {
       signal: request.signal,
-      variation: parsedRequest.data.variation,
+      variation: context.variation,
+      ...(context.exploration ? { originalChords: context.exploration.originalChords } : {}),
     });
     const chords = resolveProgression(output.chords);
     if (!chords) throw new LocalModelError("invalid_output");

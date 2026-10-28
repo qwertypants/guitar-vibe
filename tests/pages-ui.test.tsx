@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 vi.hoisted(() => { process.env.NEXT_PUBLIC_APP_MODE = "pages"; });
 import Home from "@/app/page";
 import { MyVibesLibrary } from "@/components/MyVibesLibrary";
+import * as builtin from "@/lib/builtin-progression";
 import { BROWSER_VIBES_KEY } from "@/lib/browser-vibes-store";
 
 beforeEach(() => localStorage.clear());
@@ -15,9 +16,13 @@ test("browser generation saves to My Vibes, filters, reloads, and deletes withou
   expect(screen.getByText(/Progressions use built-in musical rules/)).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Moody" }));
   fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
-  await screen.findByRole("button", { name: "re-vibe" });
+  await screen.findByRole("button", { name: "Generate mood variation" });
   expect(screen.queryByText(/trusted fallback/)).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "re-vibe" }));
+  fireEvent.click(screen.getByRole("button", { name: "Generate mood variation" }));
+  expect(await screen.findByText("Variation 1 · Dreamy")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
+  expect(await screen.findByText("Variation 2 · Surprise")).toBeVisible();
+  expect(screen.getByText("Variation 1 · Dreamy")).toBeVisible();
   await waitFor(() => expect(screen.getByRole("button", { name: "Save vibe" })).toBeEnabled());
   fireEvent.click(screen.getByRole("button", { name: "Save vibe" }));
   await screen.findByText("Vibe saved to My Vibes.");
@@ -43,4 +48,23 @@ test("corrupt browser data is reported and preserved", async () => {
   render(<MyVibesLibrary />);
   await screen.findByText("Saved vibes could not be loaded. Refresh to try again.");
   expect(localStorage.getItem(BROWSER_VIBES_KEY)).toBe("damaged");
+});
+
+test("a failed Pages variation retains the original and earlier alternatives, then recovers", async () => {
+  const fetch = vi.spyOn(globalThis, "fetch");
+  render(<Home />);
+  fireEvent.click(screen.getByRole("button", { name: "Moody" }));
+  fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Generate mood variation" }));
+  expect(await screen.findByText("Variation 1 · Dreamy")).toBeVisible();
+  vi.spyOn(builtin, "getFallbackProgression").mockReturnValueOnce(["unknown", "F", "G"]);
+  fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
+  await waitFor(() => expect(screen.getAllByRole("alert").some((alert) => alert.textContent === "This progression could not be played.")).toBe(true));
+  expect(screen.getByText("Variation 1 · Dreamy")).toBeVisible();
+  expect(screen.getByRole("button", { name: "Play C, Open position" })).toBeEnabled();
+  expect(screen.queryByText(/Variation 2/)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
+  expect(await screen.findByText("Variation 2 · Surprise")).toBeVisible();
+  expect(screen.getByText("Variation 1 · Dreamy")).toBeVisible();
+  expect(fetch).not.toHaveBeenCalled();
 });

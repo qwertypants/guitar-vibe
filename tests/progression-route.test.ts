@@ -75,3 +75,38 @@ it("maps total deadline to 504", async () => {
   await vi.advanceTimersByTimeAsync(30_000);
   expect((await pending).status).toBe(504);
 });
+
+it.each([{ kind: "mood", moodId: "mood-dark" }, { kind: "surprise" }])("generates one alternative anchored to the original for %j", async (direction) => {
+  network.mockImplementation(async () => Response.json(valid));
+  vi.spyOn(Math, "random").mockReturnValue(0);
+  const input = { vibeIds: ["mood-warm", "genre-folk"], variation: "richer", exploration: { originalChords: ["C", "F", "G"], direction } };
+  for (let index = 0; index < 2; index++) {
+    const response = await POST(request(input));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ chords: resolveProgression(symbols) });
+    const body = JSON.parse(String(network.mock.calls[index]?.[1]?.body));
+    expect(body.messages[0].content).toContain("Original progression: C, F, G");
+    expect(body.messages[0].content).toContain(direction.kind === "mood" ? "mood: Dark" : "mood: Moody");
+    expect(body.messages[0].content).toContain("genre: Folk");
+    expect(body.messages[0].content).not.toContain("mood: Warm");
+  }
+  expect(network).toHaveBeenCalledTimes(2);
+});
+
+it("rejects an invalid original or direction before inference", async () => {
+  for (const exploration of [
+    { originalChords: ["unsupported", "C", "F"], direction: { kind: "surprise" } },
+    { originalChords: ["C", "F", "G"], direction: { kind: "mood", moodId: "genre-jazz" } },
+  ]) expect((await POST(request({ vibeIds: ["genre-jazz"], exploration }))).status).toBe(400);
+  expect(network).not.toHaveBeenCalled();
+});
+
+it("uses an anchored fallback if the model repeats the original, but reports outages", async () => {
+  const exploration = { originalChords: ["C", "F", "G"], direction: { kind: "mood", moodId: "mood-warm" } };
+  network.mockResolvedValueOnce(Response.json({ ...valid, message: { role: "assistant", content: JSON.stringify({ candidates: [{ chords: exploration.originalChords }] }) } }));
+  const response = await POST(request({ vibeIds: ["mood-warm"], exploration }));
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ chords: resolveProgression(["F", "G", "C"]), fallbackUsed: true });
+  network.mockRejectedValueOnce(new Error("Unavailable"));
+  expect((await POST(request({ vibeIds: ["mood-warm"], exploration }))).status).toBe(503);
+});

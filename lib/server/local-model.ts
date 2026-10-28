@@ -4,6 +4,7 @@ import { z } from "zod";
 import { SUPPORTED_CHORDS } from "@/lib/chords";
 import { assessProgressionHarmony } from "@/lib/harmony";
 import { getVibeLabels, progressionRequestSchema, progressionSchema, resolveProgression } from "@/lib/progression";
+import { getBuiltinVariation, variationBasisSchema } from "@/lib/progression-variation";
 import type { VariationMode } from "@/lib/variation";
 
 export type LocalModelErrorCode = "invalid_input" | "configuration" | "unavailable" | "timeout" | "invalid_output";
@@ -14,7 +15,7 @@ export class LocalModelError extends Error {
   }
 }
 
-export type GenerationOptions = { model?: string; baseUrl?: string; seed?: number; signal?: AbortSignal; variation?: VariationMode };
+export type GenerationOptions = { model?: string; baseUrl?: string; seed?: number; signal?: AbortSignal; variation?: VariationMode; originalChords?: readonly string[] };
 const MAX_RESPONSE_BYTES = 64 * 1024;
 const DEADLINE_MS = 30_000;
 const chordSymbols = SUPPORTED_CHORDS.map(({ symbol }) => symbol);
@@ -114,6 +115,7 @@ export async function generateLocalProgression(vibeIds: readonly string[], optio
   const request = progressionRequestSchema.safeParse({ vibeIds });
   const labels = request.success ? getVibeLabels(request.data.vibeIds) : null;
   if (!labels) throw new LocalModelError("invalid_input");
+  if (options.originalChords && !variationBasisSchema.safeParse(options.originalChords).success) throw new LocalModelError("invalid_input");
   const config = getLocalModelConfig(options);
   if (options.seed !== undefined && !Number.isSafeInteger(options.seed)) throw new LocalModelError("configuration");
   const variation = options.variation ?? "familiar";
@@ -146,7 +148,8 @@ export async function generateLocalProgression(vibeIds: readonly string[], optio
         keep_alive: "5m",
         options: { temperature: 0.2, num_ctx: 2048, num_predict: OUTPUT_TOKENS, ...(options.seed === undefined ? {} : { seed: options.seed }) },
         format: { type: "object", properties: { candidates: { type: "array", minItems: 1, maxItems: 3, items: { type: "object", properties: { chords: { type: "array", items: { type: "string", enum: chordSymbols }, minItems: 3, maxItems: 6 } }, required: ["chords"], additionalProperties: false } } }, required: ["candidates"], additionalProperties: false },
-        messages: [{ role: "user", content: buildLocalModelPromptForVariation(labels, variation) }],
+        messages: [{ role: "user", content: buildLocalModelPromptForVariation(labels, variation) + (options.originalChords
+          ? `\nOriginal progression: ${options.originalChords.join(", ")}. Create an alternative based on this original and the selected vibes. Keep a musical connection, but change the chord sequence. Return candidates for one variation only.` : "") }],
       }),
     }));
     if (!response.ok) {
@@ -181,7 +184,11 @@ export async function generateLocalProgression(vibeIds: readonly string[], optio
     const candidateOutput = candidateEnvelopeSchema.safeParse(parseJson(envelope.data.message.content));
     if (!candidateOutput.success) throw new LocalModelError("invalid_output");
     const allowBlues = labels.includes("genre: Blues");
-    const selected = selectProgressionCandidate(candidateOutput.data.candidates, variation, allowBlues);
+    const candidates = candidateOutput.data.candidates.filter((candidate) => {
+      const parsed = candidateSchema.safeParse(candidate);
+      return !options.originalChords || !parsed.success || JSON.stringify(parsed.data.chords) !== JSON.stringify(options.originalChords);
+    });
+    const selected = selectProgressionCandidate(candidates, variation, allowBlues);
     if (!selected) throw new LocalModelError("invalid_output");
     return {
       chords: selected.chords,
@@ -210,7 +217,9 @@ export async function generateLocalProgressionWithFallback(vibeIds: readonly str
     const request = progressionRequestSchema.safeParse({ vibeIds });
     const labels = request.success ? getVibeLabels(request.data.vibeIds) : null;
     if (!labels) throw new LocalModelError("invalid_input");
-    const chords = getFallbackProgression(labels, options.variation ?? "familiar");
+    const chords = options.originalChords
+      ? getBuiltinVariation(labels, options.variation ?? "familiar", options.originalChords)
+      : getFallbackProgression(labels, options.variation ?? "familiar");
     return {
       chords,
       metrics: { wallMs: performance.now() - started, loadMs: 0, promptTokens: 0, outputTokens: 0,

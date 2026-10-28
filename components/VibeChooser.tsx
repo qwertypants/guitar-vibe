@@ -7,6 +7,8 @@ import { VibePicker } from "@/components/VibePicker";
 import { ProgressionResult } from "@/components/ProgressionResult";
 import { UiIcon } from "@/components/UiIcon";
 import { getSelectedVibes, hasVibeSelection, surpriseVibes, type VibeSelection } from "@/lib/vibe-selection";
+import { beginProgressionVariation, completeProgressionVariation, createProgressionSession, failProgressionVariation, type ProgressionSession, type VariationDirection } from "@/lib/progression-session";
+import { vibeCatalog } from "@/lib/vibes";
 import type { ProgressionCard } from "@/lib/progression";
 import { variationModeOptions, type VariationMode } from "@/lib/variation";
 import gsap from "gsap";
@@ -20,7 +22,9 @@ export function VibeChooser() {
   const [view, setView] = useState<"choose" | "play">("choose");
   const [generatedSelection, setGeneratedSelection] = useState<VibeSelection>({});
   const [variation, setVariation] = useState<VariationMode>("familiar");
-  const [generatedVariation, setGeneratedVariation] = useState<VariationMode>("familiar");
+  const [session, setSession] = useState<ProgressionSession | null>(null);
+  const [moodId, setMoodId] = useState("mood-dreamy");
+  const requestInFlight = useRef(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fallbackUsed, setFallbackUsed] = useState(false);
@@ -105,16 +109,18 @@ export function VibeChooser() {
   const summarySelection = view === "play" ? generatedSelection : selection;
 
   const generate = async (source: VibeSelection, mode: VariationMode) => {
+    if (requestInFlight.current) return;
+    requestInFlight.current = true;
     setPending(true);
     setError(null);
     try {
       const payload = await vibeService.generate({
         vibeIds: getSelectedVibes(source).map((vibe) => vibe.id), variation: mode,
       });
+      setSession(createProgressionSession({ vibeIds: getSelectedVibes(source).map((vibe) => vibe.id), variation: mode, chords: payload.chords.map((chord) => chord.symbol) }));
       setProgression(payload.chords);
       setFallbackUsed(payload.fallbackUsed);
       setGeneratedSelection(source);
-      setGeneratedVariation(mode);
       setSaveMessage(null);
       if (view === "play") return;
       // Mount the result before the chooser leaves so the play view is ready when shown.
@@ -133,9 +139,32 @@ export function VibeChooser() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "We couldn't generate a progression. Please try again.");
     } finally {
+      requestInFlight.current = false;
       setPending(false);
     }
   };
+
+  const generateVariation = async (direction: VariationDirection) => {
+    if (!session || requestInFlight.current) return;
+    requestInFlight.current = true;
+    const requested = beginProgressionVariation(session, direction);
+    setSession(requested);
+    setError(null);
+    setSaveMessage(null);
+    try {
+      const payload = await vibeService.generate({
+        vibeIds: [...requested.vibeIds], variation: requested.variation,
+        exploration: { originalChords: [...requested.progressions.original.chords], direction },
+      });
+      setSession(completeProgressionVariation(requested, payload.chords.map((chord) => chord.symbol)));
+    } catch (cause) {
+      setSession(failProgressionVariation(requested, cause instanceof Error ? cause.message : "We couldn't generate a variation. Please try again."));
+    } finally {
+      requestInFlight.current = false;
+    }
+  };
+  const variationPending = session?.generation.kind === "pending";
+  const busy = pending || variationPending;
 
   const saveVibe = async () => {
     if (!progression || saving) return;
@@ -157,17 +186,17 @@ export function VibeChooser() {
       {isPagesMode && <p className="text-sm text-muted">Progressions use built-in musical rules. Saved vibes stay in this browser on this device.</p>}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">{getSelectedVibes(summarySelection).map((vibe) => vibe.label).join(" · ") || "No vibes selected"}</p>
-        <button type="button" disabled={pending} className="min-h-11 rounded-full border border-foreground/20 px-4 text-sm disabled:opacity-50" onClick={() => choose({})}>Reset selection</button>
+        <button type="button" disabled={busy} className="min-h-11 rounded-full border border-foreground/20 px-4 text-sm disabled:opacity-50" onClick={() => choose({})}>Reset selection</button>
       </div>
       <Tabs label="Workspace" items={[{ id: "choose", label: "Choose vibe" }, { id: "play", label: "Play", disabled: !progression || transitioning }]} value={view} onChange={switchView}
         actions={<Link href="/my-vibes" className="min-h-11 inline-flex items-center rounded-full px-4 text-sm font-medium text-accent hover:bg-accent/10">My Vibes</Link>}>
         <div ref={choosePanel} hidden={view !== "choose"} className="choose-panel space-y-5">
-        <VibePicker value={selection} onChange={choose} disabled={pending} showSurpriseAction={false} />
+        <VibePicker value={selection} onChange={choose} disabled={busy} showSurpriseAction={false} />
         <div role="group" aria-label="Progression variation" className="space-y-2">
           <p className="text-sm font-medium">Chord variation</p>
           <div className="flex flex-wrap gap-2">
             {variationModeOptions.map((option) => <button key={option.value} type="button" aria-pressed={variation === option.value}
-              aria-describedby={`variation-${option.value}`} disabled={pending}
+              aria-describedby={`variation-${option.value}`} disabled={busy}
               onClick={() => setVariation(option.value)}
               className={`min-h-11 rounded-md border px-3 py-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-50 ${variation === option.value ? "border-accent bg-accent/10" : "border-foreground/20"}`}>
               <span className="block font-medium">{option.label}</span>
@@ -176,12 +205,12 @@ export function VibeChooser() {
           </div>
         </div>
         <div className="generation-actions flex gap-3 flex-wrap">
-          <button data-intro data-generate type="button" disabled={!hasVibeSelection(selection) || pending || transitioning} onClick={() => void generate(selection, variation)}
+          <button data-intro data-generate type="button" disabled={!hasVibeSelection(selection) || busy || transitioning} onClick={() => void generate(selection, variation)}
             className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto">
             <UiIcon name="generate" />
             {pending ? "Finding your chords…" : progression ? "Generate another" : "Generate progression"}
           </button>
-          <button data-intro type="button" disabled={pending || transitioning} onClick={() => choose(surpriseVibes())}
+          <button data-intro type="button" disabled={busy || transitioning} onClick={() => choose(surpriseVibes())}
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-foreground/20 px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground sm:w-auto">
             <UiIcon name="surprise" /> Surprise me
           </button>
@@ -192,9 +221,28 @@ export function VibeChooser() {
           <>{fallbackUsed && <p role="status" className="text-sm text-muted">The model response could not be validated, so this progression uses a trusted fallback.</p>}
           <ProgressionResult key={JSON.stringify(progression)} chords={progression} active={view === "play" && !transitioning && !pending} onEditVibe={() => switchView("choose")} />
           <div className="flex flex-wrap items-center gap-3">
-            <button type="button" disabled={pending || transitioning} onClick={() => void generate(generatedSelection, generatedVariation)} className="min-h-11 rounded-full border border-foreground/20 px-4 text-sm font-medium disabled:opacity-50">{pending ? "Finding your chords…" : "re-vibe"}</button>
-            <button type="button" disabled={saving || pending} onClick={() => void saveVibe()} className="min-h-11 rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground disabled:opacity-50">{saving ? "Saving…" : "Save vibe"}</button>
+            {session && <fieldset disabled={busy || transitioning} className="flex flex-wrap items-center gap-3">
+              <legend className="mb-2 text-sm font-medium">Create a variation</legend>
+              <fieldset className="basis-full">
+                <legend className="mb-2 text-sm">Mood direction</legend>
+                <div className="flex flex-wrap gap-2">
+                  {vibeCatalog.filter((vibe) => vibe.facet === "mood").map((mood) => <label key={mood.id} className="inline-flex min-h-11 items-center gap-2 rounded-md border border-foreground/20 px-3 text-sm">
+                    <input type="radio" name="variation-mood" value={mood.id} checked={moodId === mood.id} onChange={() => setMoodId(mood.id)} />
+                    {mood.label}
+                  </label>)}
+                </div>
+              </fieldset>
+              <button type="button" onClick={() => void generateVariation({ kind: "mood", moodId })} className="min-h-11 rounded-full border border-foreground/20 px-4 text-sm font-medium disabled:opacity-50">Generate mood variation</button>
+              <button type="button" onClick={() => void generateVariation({ kind: "surprise" })} className="min-h-11 rounded-full border border-foreground/20 px-4 text-sm font-medium disabled:opacity-50">Surprise variation</button>
+            </fieldset>}
+            <button type="button" disabled={saving || busy} onClick={() => void saveVibe()} className="min-h-11 rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground disabled:opacity-50">{saving ? "Saving…" : "Save vibe"}</button>
             {saveMessage && <p role="status" className="text-sm text-muted">{saveMessage}</p>}</div></>
+          {variationPending && <p role="status" className="text-sm text-muted">Generating one variation…</p>}
+          {session?.generation.kind === "error" && <p role="alert" className="text-sm">{session.generation.message}</p>}
+          {session?.progressions.variations.map((entry) => <div key={entry.id} aria-label={entry.label} className="space-y-1">
+            <p className="text-sm font-medium">{entry.label}</p>
+            <p className="text-sm text-muted">{entry.chords.join(" · ")}</p>
+          </div>)}
           {error && <p role="alert" className="text-sm">{error}</p>}
         </div>}
       </Tabs>

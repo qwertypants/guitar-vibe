@@ -213,3 +213,12 @@ describe("local generation", () => {
     expect(cancel).toHaveBeenCalledOnce();
   });
 });
+
+it("validates the original before inference and filters a repeated original among candidates", async () => {
+  await expect(generateLocalProgression(ids, { originalChords: ["C", "F", "unknown"] })).rejects.toMatchObject({ code: "invalid_input" });
+  expect(network).not.toHaveBeenCalled();
+  network.mockResolvedValueOnce(Response.json(envelope(JSON.stringify(candidateSet([["C", "F", "G"], ["Am", "F", "G"]])))));
+  const result = await generateLocalProgression(ids, { originalChords: ["C", "F", "G"] });
+  expect(result.chords).toEqual(["Am", "F", "G"]);
+  expect(result.metrics.usableCandidates).toBe(1);
+});
