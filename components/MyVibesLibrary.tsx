@@ -9,6 +9,7 @@ import Flip from "gsap/Flip";
 import { PlaybackController } from "@/lib/playback";
 import { reducedMotion } from "@/lib/motion";
 import { ChordNotation } from "@/components/ChordNotation";
+import { ProgressionComparison } from "@/components/ProgressionComparison";
 import { UiIcon } from "@/components/UiIcon";
 import { filterVibes } from "@/lib/vibes-filter";
 import { vibeCatalog, vibeFacets } from "@/lib/vibes";
@@ -27,6 +28,7 @@ function usePlayback(createController: () => PlaybackController) {
 export const MyVibesLibrary = ({ createController = () => new PlaybackController() }: { createController?: () => PlaybackController }) => {
   const [entries, setEntries] = useState<SavedVibe[]>([]);
   const [playingEntryId, setPlayingEntryId] = useState<number | null>(null);
+  const [openEntryId, setOpenEntryId] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [message, setMessage] = useState("Loading your saved vibes…");
   const root = useRef<HTMLElement>(null);
@@ -77,11 +79,13 @@ export const MyVibesLibrary = ({ createController = () => new PlaybackController
   };
 
   const preview = (voicing: ChordVoicing, event: React.MouseEvent<HTMLButtonElement>) => {
+    setOpenEntryId(null);
     void controllerState.controller.preview(voicing).catch(() => setMessage("Audio could not start. Try again."));
     if (!reducedMotion()) gsap.fromTo(event.currentTarget, { scale: 0.92 }, { scale: 1, duration: 0.25, ease: "back.out(2)" });
   };
 
   const playEntry = (entry: SavedVibe) => {
+    setOpenEntryId(null);
     if (controllerState.state.kind === "sequence" && playingEntryId === entry.id) {
       controllerState.controller.stop();
       setPlayingEntryId(null);
@@ -138,7 +142,10 @@ export const MyVibesLibrary = ({ createController = () => new PlaybackController
         return <li data-vibe-row data-vibe-id={entry.id} key={entry.id} className="my-vibes-entry w-full min-w-0 rounded-xl border border-foreground/15 bg-card p-3 sm:p-4">
         <article className="space-y-3"><header className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><h2 className="text-base leading-snug">{new Date(entry.createdAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</h2>
           <div className="mt-2 flex flex-wrap gap-1.5">{entry.vibeIds.map((id) => { const option = vibeCatalog.find((item) => item.id === id); return option ? <span key={id} className="rounded-full border border-foreground/15 px-2 py-0.5 text-[0.7rem]">{vibeFacets.find((facet) => facet.id === option.facet)?.label}: {option.label}</span> : null; })}</div></div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" aria-expanded={openEntryId === entry.id} aria-controls={`saved-comparison-${entry.id}`}
+              onClick={() => { controllerState.controller.stop(); setPlayingEntryId(null); setOpenEntryId(openEntryId === entry.id ? null : entry.id); }}
+              className="min-h-11 rounded-full border border-foreground/20 px-4 text-sm">{openEntryId === entry.id ? "Close saved vibe" : "Open saved vibe"}</button>
             <button type="button" onClick={() => playEntry(entry)} disabled={!canPlay}
               aria-label={`${isPlaying ? "Stop" : "Play"} saved progression from ${new Date(entry.createdAt).toLocaleDateString()}`}
               aria-pressed={isPlaying} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-accent bg-accent px-4 text-sm font-medium text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50">
@@ -146,7 +153,9 @@ export const MyVibesLibrary = ({ createController = () => new PlaybackController
             </button>
             <button type="button" onClick={() => void remove(entry)} className="min-h-11 rounded-full border border-foreground/20 px-4 text-sm">Delete</button>
           </div></header>
-          <div className="my-vibe-chords grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4" aria-label="Chord previews">{entry.chords.map((chord, index) => {
+          <div id={`saved-comparison-${entry.id}`}>{openEntryId === entry.id ?
+            <ProgressionComparison progressions={entry.progressions} createController={createController} />
+          : <div className="my-vibe-chords grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4" aria-label="Chord previews">{entry.chords.map((chord, index) => {
             const resolution = resolveChord(chord);
             if (resolution.kind === "unsupported") return <p key={`${chord}-${index}`} className="text-sm text-muted">Chord shape unavailable for {chord}.</p>;
             return <section key={`${chord}-${index}`} aria-label={`${chord} voicings`} className="space-y-1.5">
@@ -157,7 +166,7 @@ export const MyVibesLibrary = ({ createController = () => new PlaybackController
                 </div>)}
               </div>
             </section>;
-          })}</div>
+          })}</div>}</div>
         </article>
       </li>;
       })}

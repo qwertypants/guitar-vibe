@@ -3,6 +3,8 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { resolveProgression } from "@/lib/progression";
 import { variationModeOptions } from "@/lib/variation";
 import Home from "@/app/page";
+import { MyVibesLibrary } from "@/components/MyVibesLibrary";
+import { parseSnapshot, type SavedVibe } from "@/lib/saved-vibe";
 
 beforeEach(() => {
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
@@ -83,7 +85,7 @@ test("saving a generated progression sends its creation facets and chord symbols
   await screen.findByRole("button", { name: "Save vibe" });
   fireEvent.click(screen.getByRole("button", { name: "Save vibe" }));
   await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
-  expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body))).toEqual({ vibeIds: ["mood-moody"], chords: ["Am", "F", "C"] });
+  expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body))).toEqual({ vibeIds: ["mood-moody"], chords: ["Am", "F", "C"], progressions: { original: { id: "original", label: "Original", chords: ["Am", "F", "C"] }, variations: [] } });
   expect(await screen.findByText("Vibe saved to My Vibes.")).toHaveAttribute("role", "status");
 });
 
@@ -243,4 +245,55 @@ test("successive mood and surprise actions retain earlier options through invali
   for (const index of [2, 3]) expect(JSON.parse(String(fetch.mock.calls[index]?.[1]?.body))).toEqual({
     vibeIds: ["mood-moody"], variation: "familiar", exploration: { originalChords: ["C", "F", "G"], direction: { kind: "surprise" } },
   });
+});
+
+test("saves the complete server session after a failed save and reloads every progression in order", async () => {
+  const saved: SavedVibe[] = [];
+  const generated = [["C", "F", "G"], ["Am", "F", "C"], ["Dm", "G", "C"]];
+  let saveAttempts = 0;
+  let completeSave: ((response: Response) => void) | undefined;
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+    if (url === "/api/progression") return Response.json({ chords: resolveProgression(generated.shift() ?? []) });
+    if (init?.method === "POST") {
+      const snapshot = parseSnapshot(JSON.parse(String(init.body)));
+      if (!snapshot) throw new Error("Invalid saved session");
+      saveAttempts += 1;
+      if (saveAttempts === 1) return Response.json({ error: "Storage unavailable. Try again." }, { status: 503 });
+      saved.push({ id: 1, createdAt: "2026-10-28T12:00:00Z", ...snapshot });
+      return new Promise<Response>((resolve) => { completeSave = resolve; });
+    }
+    return Response.json({ vibes: saved });
+  });
+  const view = render(<Home />);
+  fireEvent.click(screen.getByRole("button", { name: "Moody" }));
+  fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Generate mood variation" }));
+  await screen.findByText("Variation 1 · Dreamy");
+  fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
+  await screen.findByText("Variation 2 · Surprise");
+  fireEvent.click(screen.getByRole("button", { name: "Edit vibe" }));
+  fireEvent.click(screen.getByRole("button", { name: "Dreamy" }));
+  fireEvent.click(screen.getByRole("tab", { name: "Play" }));
+  fireEvent.click(screen.getByRole("button", { name: "Save vibe" }));
+  expect(await screen.findByText("Storage unavailable. Try again.")).toHaveAttribute("role", "status");
+  expect(screen.getByText("C · F · G")).toBeVisible();
+  expect(screen.getByText("Am · F · C")).toBeVisible();
+  expect(screen.getByText("Dm · G · C")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Save vibe" }));
+  expect(screen.getByRole("button", { name: "Saving…" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Surprise variation" })).toBeDisabled();
+  expect(saved[0]).toMatchObject({ vibeIds: ["mood-moody"], chords: ["C", "F", "G"], progressions: {
+    original: { id: "original", label: "Original", chords: ["C", "F", "G"] },
+    variations: [
+      { id: "variation-1", label: "Variation 1 · Dreamy", chords: ["Am", "F", "C"], direction: { kind: "mood", moodId: "mood-dreamy" } },
+      { id: "variation-2", label: "Variation 2 · Surprise", chords: ["Dm", "G", "C"], direction: { kind: "surprise" } },
+    ],
+  } });
+  completeSave?.(Response.json({ vibe: saved[0] }, { status: 201 }));
+  await screen.findByText("Vibe saved to My Vibes.");
+  view.unmount();
+  render(<MyVibesLibrary />);
+  fireEvent.click(await screen.findByRole("button", { name: "Open saved vibe" }));
+  expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["Original", "Variation 1 · Dreamy", "Variation 2 · Surprise"]);
+  for (const chords of ["C · F · G", "Am · F · C", "Dm · G · C"]) expect(screen.getByText(chords)).toBeVisible();
 });

@@ -164,14 +164,14 @@ export function VibeChooser() {
     }
   };
   const variationPending = session?.generation.kind === "pending";
-  const busy = pending || variationPending;
+  const busy = pending || variationPending || saving;
 
   const saveVibe = async () => {
-    if (!progression || saving) return;
+    if (!session || busy) return;
     setSaving(true);
     setSaveMessage(null);
     try {
-      await vibeService.save({ vibeIds: getSelectedVibes(generatedSelection).map((vibe) => vibe.id), chords: progression.map((chord) => chord.symbol) });
+      await vibeService.save({ vibeIds: session.vibeIds, chords: session.progressions.original.chords, progressions: session.progressions });
       setSaveMessage("Vibe saved to My Vibes.");
     } catch (cause) {
       setSaveMessage(cause instanceof Error ? cause.message : "This vibe could not be saved. Please try again.");

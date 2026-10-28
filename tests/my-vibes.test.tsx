@@ -75,6 +75,29 @@ it("shows a recovery message for an invalid list response", async () => {
   expect(await screen.findByText("Saved vibes could not be loaded. Refresh to try again.")).toBeInTheDocument();
 });
 
+it("opens legacy vibes as an original-only comparison and closes comparison before library playback", async () => {
+  vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ vibes: [
+    { id: 1, createdAt: "2026-10-12T12:00:00.000Z", vibeIds: ["mood-dreamy"], chords: ["Am", "F", "C"] },
+  ] }));
+  const controller = new PlaybackController();
+  const stop = vi.spyOn(controller, "stop");
+  const sequence = vi.spyOn(controller, "sequence").mockResolvedValue();
+  render(<MyVibesLibrary createController={() => controller} />);
+  const open = await screen.findByRole("button", { name: "Open saved vibe" });
+  expect(open).toHaveAttribute("aria-expanded", "false");
+  fireEvent.click(open);
+  expect(stop).toHaveBeenCalled();
+  expect(open).toHaveAttribute("aria-expanded", "true");
+  expect(screen.getByRole("region", { name: "Original" })).toBeVisible();
+  expect(screen.queryByText(/Variation 1/)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Close saved vibe" }));
+  expect(screen.queryByRole("region", { name: "Original" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Open saved vibe" }));
+  fireEvent.click(screen.getByRole("button", { name: /Play saved progression/ }));
+  expect(sequence).toHaveBeenCalled();
+  expect(screen.queryByRole("region", { name: "Original" })).not.toBeInTheDocument();
+});
+
 it("reports a failed load and leaves a vibe in place when deletion fails", async () => {
   const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(Response.json({ vibes: [
     { id: 8, createdAt: "2026-10-10T12:00:00.000Z", vibeIds: ["mood-warm"], chords: ["C", "G", "Am"] },

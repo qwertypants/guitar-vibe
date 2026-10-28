@@ -58,5 +58,15 @@
     "reason": "Task 4 renders repeated chords in multiple labeled progression sections. Scope the same playback assertion to its original or variation section without weakening it.",
     "owner": "guitar-vibe maintainers",
     "expires": "2026-11-28"
+  },
+  {
+    "id": "save-complete-session",
+    "file": "tests/page.test.tsx",
+    "removed": "expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body))).toEqual({ vibeIds: [\"mood-moody\"], chords: [\"Am\", \"F\", \"C\"] });",
+    "replacement": "expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body))).toEqual({ vibeIds: [\"mood-moody\"], chords: [\"Am\", \"F\", \"C\"], progressions: { original: { id: \"original\", label: \"Original\", chords: [\"Am\", \"F\", \"C\"] }, variations: [] } });",
+    "count": 1,
+    "reason": "Task 5 extends the save request with the full session collection; the replacement asserts the complete extended body while retaining creation facets and original chord checks.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
   }
 ]

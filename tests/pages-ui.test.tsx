@@ -24,8 +24,23 @@ test("browser generation saves to My Vibes, filters, reloads, and deletes withou
   expect(await screen.findByText("Variation 2 · Surprise")).toBeVisible();
   expect(screen.getByText("Variation 1 · Dreamy")).toBeVisible();
   await waitFor(() => expect(screen.getByRole("button", { name: "Save vibe" })).toBeEnabled());
+  vi.spyOn(Storage.prototype, "setItem").mockImplementationOnce(() => { throw new Error("Browser storage is full. Clear space and retry."); });
+  fireEvent.click(screen.getByRole("button", { name: "Save vibe" }));
+  expect(await screen.findByText("Browser storage is full. Clear space and retry.")).toHaveAttribute("role", "status");
+  expect(screen.getByRole("region", { name: "Original" })).toBeVisible();
+  expect(screen.getByText("Variation 1 · Dreamy")).toBeVisible();
+  expect(screen.getByText("Variation 2 · Surprise")).toBeVisible();
+  expect(localStorage.getItem(BROWSER_VIBES_KEY)).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Save vibe" }));
   await screen.findByText("Vibe saved to My Vibes.");
+  const stored = JSON.parse(localStorage.getItem(BROWSER_VIBES_KEY) ?? "null");
+  expect(stored.vibes[0]).toMatchObject({ vibeIds: ["mood-moody"], chords: ["C", "F", "G"], progressions: {
+    original: { id: "original", label: "Original", chords: ["C", "F", "G"] },
+    variations: [
+      { id: "variation-1", label: "Variation 1 · Dreamy", direction: { kind: "mood", moodId: "mood-dreamy" } },
+      { id: "variation-2", label: "Variation 2 · Surprise", direction: { kind: "surprise" } },
+    ],
+  } });
   view.unmount();
   const library = render(<MyVibesLibrary />);
   expect(screen.getByText(/Saved in this browser/)).toBeVisible();
@@ -36,6 +51,13 @@ test("browser generation saves to My Vibes, filters, reloads, and deletes withou
   library.unmount();
   render(<MyVibesLibrary />);
   await screen.findByRole("button", { name: "Delete" });
+  fireEvent.click(screen.getByRole("button", { name: "Open saved vibe" }));
+  expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["Original", "Variation 1 · Dreamy", "Variation 2 · Surprise"]);
+  expect(screen.getByText(stored.vibes[0].progressions.original.chords.join(" · "))).toBeVisible();
+  for (const entry of stored.vibes[0].progressions.variations) {
+    expect(within(screen.getByRole("region", { name: entry.label })).getByRole("button", { name: "Play progression" })).toBeEnabled();
+    expect(screen.getAllByText(entry.chords.join(" · ")).length).toBeGreaterThan(0);
+  }
   vi.spyOn(window, "confirm").mockReturnValue(true);
   fireEvent.click(screen.getByRole("button", { name: "Delete" }));
   await screen.findByText("Vibe deleted.");
