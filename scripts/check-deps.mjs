@@ -31,9 +31,11 @@ if (existsSync(baselinePath)) {
   }
 }
 
+// The npm lockfile is the complete dependency inventory, including development
+// packages. Explicit input also works when an ancestor ignores a nested worktree.
 let raw;
 try {
-  raw = execFileSync("osv-scanner", ["scan", "source", "-r", ".", "--format", "json"], {
+  raw = execFileSync("osv-scanner", ["scan", "source", "--lockfile", "package-lock.json", "--format", "json"], {
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
     stdio: ["ignore", "pipe", "pipe"],

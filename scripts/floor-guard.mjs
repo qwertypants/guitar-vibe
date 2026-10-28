@@ -74,9 +74,41 @@ for (const { file, text } of added) {
   if (/CONSTRAINTS\.md$/.test(file) && /^\| *(W|E)\d+ *\|/.test(text)) flag("new-exception", file, text);
 }
 
+// Assertion migrations are reviewed individually. A record can only exempt its
+// exact removed line when all declared replacement lines exist in the same diff.
+const replacementPath = join(process.cwd(), ".constraint-assertion-replacements.json");
+let replacements = [];
+if (existsSync(replacementPath)) {
+  try {
+    replacements = JSON.parse(readFileSync(replacementPath, "utf8"));
+    if (!Array.isArray(replacements) || replacements.some((entry) =>
+      !entry || ["id", "file", "removed", "replacement", "reason", "owner"].some((key) => typeof entry[key] !== "string" || !entry[key].trim()) ||
+      !Number.isInteger(entry.count) || entry.count < 1 ||
+      typeof entry.expires !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(entry.expires) || !Number.isFinite(Date.parse(entry.expires)))) {
+      throw new Error("expected exact assertion replacements with a reason, owner, expiry, and positive count");
+    }
+  } catch (err) {
+    console.error(`floor-guard: invalid assertion replacement registry: ${err.message}`);
+    process.exit(2);
+  }
+}
+const today = new Date().toISOString().slice(0, 10);
+const acceptedReplacements = new Map();
+const usedReplacementLines = new Map();
+for (const entry of replacements) {
+  const oldLines = removed.filter((line) => line.file === entry.file && line.text.trim() === entry.removed);
+  if (!oldLines.length) continue;
+  const newLines = added.filter((line) => line.file === entry.file && line.text.trim() === entry.replacement);
+  const replacementKey = `${entry.file}\n${entry.replacement}`;
+  const used = usedReplacementLines.get(replacementKey) ?? 0;
+  if (entry.expires < today || oldLines.length !== entry.count || newLines.length - used < entry.count) continue;
+  usedReplacementLines.set(replacementKey, used + entry.count);
+  acceptedReplacements.set(`${entry.file}\n${entry.removed}`, entry);
+}
+
 for (const { file, text } of removed) {
   if (/(test|spec)\.[jt]sx?$/.test(file) && /\b(expect|assert|should)\b/.test(text)) {
-    flag("assertion-removed", file, text);
+    if (!acceptedReplacements.has(`${file}\n${text.trim()}`)) flag("assertion-removed", file, text);
   }
 }
 
@@ -91,6 +123,7 @@ for (const r of removedConstraints) {
 }
 
 if (findings.length === 0) {
+  for (const entry of acceptedReplacements.values()) console.log(`floor-guard: tracked assertion replacement ${entry.id} (${entry.count} line(s), owner ${entry.owner}, expires ${entry.expires})`);
   console.log("floor-guard: clean");
   process.exit(0);
 }

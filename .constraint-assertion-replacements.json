@@ -1,0 +1,42 @@
+[
+  {
+    "id": "variation-request-context",
+    "file": "tests/page.test.tsx",
+    "removed": "expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body))).toEqual({ vibeIds: [\"mood-moody\"], variation: \"adventurous\" });",
+    "replacement": "expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body))).toEqual({ vibeIds: [\"mood-moody\"], variation: \"adventurous\", exploration: { originalChords: [\"Am\", \"F\", \"C\"], direction: { kind: \"mood\", moodId: \"mood-dreamy\" } } });",
+    "count": 1,
+    "reason": "Task 3 adds original progression and mood direction to variation requests; the replacement asserts the complete extended body.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "variation-pending-control",
+    "file": "tests/page.test.tsx",
+    "removed": "expect(screen.getByRole(\"button\", { name: \"Finding your chords…\" })).toBeDisabled();",
+    "replacement": "expect(screen.getByRole(\"button\", { name: \"Generate mood variation\" })).toBeDisabled();",
+    "count": 1,
+    "reason": "Task 3 replaces the Play re-vibe action with mood variation; the replacement asserts the active generation control stays disabled while pending.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "variation-enabled-recovery",
+    "file": "tests/page.test.tsx",
+    "removed": "expect(screen.getByRole(\"button\", { name: \"re-vibe\" })).toBeEnabled();",
+    "replacement": "expect(screen.getByRole(\"button\", { name: \"Generate mood variation\" })).toBeEnabled();",
+    "count": 2,
+    "reason": "Task 3 renames the Play action; both success and failure still assert the generation control is enabled afterward.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "variation-visible-control",
+    "file": "tests/page.test.tsx",
+    "removed": "await waitFor(() => expect(screen.getByRole(\"button\", { name: \"re-vibe\" })).toBeVisible());",
+    "replacement": "await waitFor(() => expect(screen.getByRole(\"button\", { name: \"Generate mood variation\" })).toBeVisible());",
+    "count": 1,
+    "reason": "Task 3 replaces re-vibe with explicit mood variation; the failure test still waits for the visible generation control before interacting.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  }
+]
