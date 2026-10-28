@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 vi.hoisted(() => { process.env.NEXT_PUBLIC_APP_MODE = "pages"; });
@@ -61,7 +61,8 @@ test("a failed Pages variation retains the original and earlier alternatives, th
   fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
   await waitFor(() => expect(screen.getAllByRole("alert").some((alert) => alert.textContent === "This progression could not be played.")).toBe(true));
   expect(screen.getByText("Variation 1 · Dreamy")).toBeVisible();
-  expect(screen.getByRole("button", { name: "Play C, Open position" })).toBeEnabled();
+  expect(within(screen.getByRole("region", { name: "Original" })).getByRole("button", { name: "Play C, Open position" })).toBeEnabled();
+  expect(within(screen.getByRole("region", { name: "Variation 1 · Dreamy" })).getByRole("button", { name: "Play progression" })).toBeEnabled();
   expect(screen.queryByText(/Variation 2/)).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
   expect(await screen.findByText("Variation 2 · Surprise")).toBeVisible();

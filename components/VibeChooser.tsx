@@ -4,7 +4,7 @@ import { isPagesMode, vibeService } from "@/lib/client/vibe-service";
 import { Tabs } from "@/components/Tabs";
 import { useEffect, useRef, useState } from "react";
 import { VibePicker } from "@/components/VibePicker";
-import { ProgressionResult } from "@/components/ProgressionResult";
+import { ProgressionComparison } from "@/components/ProgressionComparison";
 import { UiIcon } from "@/components/UiIcon";
 import { getSelectedVibes, hasVibeSelection, surpriseVibes, type VibeSelection } from "@/lib/vibe-selection";
 import { beginProgressionVariation, completeProgressionVariation, createProgressionSession, failProgressionVariation, type ProgressionSession, type VariationDirection } from "@/lib/progression-session";
@@ -219,7 +219,6 @@ export function VibeChooser() {
         </div>
         {progression && <div ref={playPanel} hidden={view !== "play"} className="play-panel space-y-5">
           <>{fallbackUsed && <p role="status" className="text-sm text-muted">The model response could not be validated, so this progression uses a trusted fallback.</p>}
-          <ProgressionResult key={JSON.stringify(progression)} chords={progression} active={view === "play" && !transitioning && !pending} onEditVibe={() => switchView("choose")} />
           <div className="flex flex-wrap items-center gap-3">
             {session && <fieldset disabled={busy || transitioning} className="flex flex-wrap items-center gap-3">
               <legend className="mb-2 text-sm font-medium">Create a variation</legend>
@@ -239,10 +238,7 @@ export function VibeChooser() {
             {saveMessage && <p role="status" className="text-sm text-muted">{saveMessage}</p>}</div></>
           {variationPending && <p role="status" className="text-sm text-muted">Generating one variation…</p>}
           {session?.generation.kind === "error" && <p role="alert" className="text-sm">{session.generation.message}</p>}
-          {session?.progressions.variations.map((entry) => <div key={entry.id} aria-label={entry.label} className="space-y-1">
-            <p className="text-sm font-medium">{entry.label}</p>
-            <p className="text-sm text-muted">{entry.chords.join(" · ")}</p>
-          </div>)}
+          {session && <ProgressionComparison key={JSON.stringify(session.progressions.original.chords)} progressions={session.progressions} active={view === "play" && !transitioning && !pending} onEditVibe={() => switchView("choose")} />}
           {error && <p role="alert" className="text-sm">{error}</p>}
         </div>}
       </Tabs>

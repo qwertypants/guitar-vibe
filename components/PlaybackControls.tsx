@@ -10,11 +10,12 @@ import { reducedMotion } from "@/lib/motion";
 
 export type PlaybackControlsFooter = { state: ReturnType<PlaybackController["getState"]>; playScale: (scaleId: string, midiNotes: readonly number[]) => void };
 
-export function PlaybackControls({ voicings, children, active = true, createController = () => new PlaybackController(), renderFooter }: {
+export function PlaybackControls({ voicings, children, active = true, createController = () => new PlaybackController(), onPlaybackStart, renderFooter }: {
   voicings: readonly ChordVoicing[];
   active?: boolean;
   children?: (voicing: ChordVoicing, index: number, preview: (voicing: ChordVoicing) => void) => ReactNode;
   createController?: () => PlaybackController;
+  onPlaybackStart?: (controller: PlaybackController) => void;
   renderFooter?: (controls: PlaybackControlsFooter) => ReactNode;
 }) {
   const [controller] = useState(createController);
@@ -38,6 +39,7 @@ export function PlaybackControls({ voicings, children, active = true, createCont
 
   const start = (play: () => Promise<void>) => {
     setError(null);
+    onPlaybackStart?.(controller);
     void play().catch((cause: unknown) => {
       setError(cause instanceof Error ? cause.message : "Audio could not start. Try playing again.");
     });

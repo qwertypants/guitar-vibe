@@ -109,12 +109,12 @@ test("a mood variation uses the original Play context and appends without replac
   expect(screen.getByRole("button", { name: "Generate mood variation" })).toBeDisabled();
   expect(screen.getByText("Generating one variation…")).toHaveAttribute("role", "status");
   expect(screen.getByRole("button", { name: "Save vibe" })).toBeDisabled();
-  expect(screen.getByRole("button", { name: "Play Am, Open position" })).toBeVisible();
+  expect(within(screen.getByRole("region", { name: "Original" })).getByRole("button", { name: "Play Am, Open position" })).toBeVisible();
   finishReVibe?.(Response.json({ chords: second }));
-  await waitFor(() => expect(screen.getByRole("button", { name: "Play C, Open position" })).toBeVisible());
+  await waitFor(() => expect(within(screen.getByRole("region", { name: "Variation 1 · Dreamy" })).getByRole("button", { name: "Play C, Open position" })).toBeVisible());
   expect(await screen.findByText("Variation 1 · Dreamy")).toBeVisible();
   expect(screen.getByText("C · G · Am")).toBeVisible();
-  expect(screen.getByRole("button", { name: "Play Am, Open position" })).toBeVisible();
+  expect(within(screen.getByRole("region", { name: "Original" })).getByRole("button", { name: "Play Am, Open position" })).toBeVisible();
   expect(screen.getByRole("button", { name: "Generate mood variation" })).toBeEnabled();
   expect(screen.getByRole("tabpanel", { name: "Play" })).toHaveTextContent("Moody");
 });
@@ -233,7 +233,7 @@ test("successive mood and surprise actions retain earlier options through invali
   await waitFor(() => expect(screen.getAllByRole("alert").some((alert) => alert.textContent === "This progression could not be played.")).toBe(true));
   expect(screen.getByText("Variation 1 · Dark")).toBeVisible();
   expect(screen.queryByText(/Variation 2/)).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Play C, Open position" })).toBeEnabled();
+  expect(within(screen.getByRole("region", { name: "Original" })).getByRole("button", { name: "Play C, Open position" })).toBeEnabled();
   fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
   expect(await screen.findByText("Variation 2 · Surprise")).toBeVisible();
   expect(screen.getByText("Variation 1 · Dark")).toBeVisible();

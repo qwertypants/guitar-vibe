@@ -38,5 +38,25 @@
     "reason": "Task 3 replaces re-vibe with explicit mood variation; the failure test still waits for the visible generation control before interacting.",
     "owner": "guitar-vibe maintainers",
     "expires": "2026-11-28"
+  },
+  {
+    "id": "comparison-original-preview",
+    "file": "tests/page.test.tsx",
+    "removed": "expect(screen.getByRole(\"button\", { name: \"Play Am, Open position\" })).toBeVisible();",
+    "replacement": "expect(within(screen.getByRole(\"region\", { name: \"Original\" })).getByRole(\"button\", { name: \"Play Am, Open position\" })).toBeVisible();",
+    "count": 1,
+    "reason": "Task 4 renders repeated chords in multiple labeled progression sections. Scope the same playback assertion to its original or variation section without weakening it.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "comparison-variation-preview",
+    "file": "tests/page.test.tsx",
+    "removed": "await waitFor(() => expect(screen.getByRole(\"button\", { name: \"Play C, Open position\" })).toBeVisible());",
+    "replacement": "await waitFor(() => expect(within(screen.getByRole(\"region\", { name: \"Variation 1 · Dreamy\" })).getByRole(\"button\", { name: \"Play C, Open position\" })).toBeVisible());",
+    "count": 1,
+    "reason": "Task 4 renders repeated chords in multiple labeled progression sections. Scope the same playback assertion to its original or variation section without weakening it.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
   }
 ]

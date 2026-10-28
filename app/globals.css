@@ -330,3 +330,9 @@ html[data-motion-boot="pending"] [data-intro] { visibility: hidden; }
     padding: .25rem .7rem;
   }
 }
+
+/* Keep each comparison transport below its label, including compact landscape layouts. */
+.page-shell:has(.vibe-workspace[data-view="play"]) .progression-comparison .chord-playback > div:first-child {
+  position: static;
+  justify-content: flex-start;
+}
