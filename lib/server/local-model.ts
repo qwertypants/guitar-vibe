@@ -1,4 +1,5 @@
 import "server-only";
+import { getFallbackProgression } from "@/lib/builtin-progression";
 import { z } from "zod";
 import { SUPPORTED_CHORDS } from "@/lib/chords";
 import { assessProgressionHarmony } from "@/lib/harmony";
@@ -81,28 +82,6 @@ export function selectProgressionCandidate(rawCandidates: readonly unknown[], va
   return selected ? { chords: selected.chords, usableCandidates: survivors.length } : null;
 }
 
-function getFallbackProgression(labels: readonly string[], variation: VariationMode): string[] {
-  const isBlues = labels.includes("genre: Blues");
-  const isJazz = labels.some((label) => label === "genre: Jazz" || label === "genre: Neo-soul");
-  const isMinor = labels.some((label) => label === "mood: Melancholy" || label === "mood: Dark");
-  const chords = isBlues ? ["E7", "A7", "B7"]
-    : isJazz && isMinor ? ["Am7", "Dm7", "G7", "Cmaj7"]
-      : isJazz ? ["Cmaj7", "Am7", "Fmaj7", "G7"]
-        : isMinor && variation === "richer" ? ["Am7", "Dm7", "E7", "Am7"]
-          : isMinor && variation === "adventurous" ? ["Am", "Dsus4", "E7", "Am"]
-            : isMinor ? ["Am", "F", "G"]
-              : variation === "richer" ? ["Cmaj7", "Am7", "Fmaj7", "G7"]
-                : variation === "adventurous" ? ["C", "Am", "Dsus4", "G"]
-                  : ["C", "F", "G"];
-  const parsed = progressionSchema.safeParse({ chords });
-  const resolved = parsed.success ? resolveProgression(parsed.data.chords) : null;
-  const harmony = assessProgressionHarmony(chords, isBlues);
-  if (!parsed.success || !resolved || resolved.some((card, index) => card.symbol !== chords[index] || card.voicings.length === 0) ||
-    new Set(chords).size < 2 || !harmony.coherent) {
-    throw new Error("Configured fallback progression failed validation.");
-  }
-  return chords;
-}
 const envelopeSchema = z.object({
   message: z.object({ role: z.literal("assistant"), content: z.string() }),
   done: z.literal(true),

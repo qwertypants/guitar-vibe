@@ -1,5 +1,6 @@
 "use client";
 
+import { isPagesMode, vibeService } from "@/lib/client/vibe-service";
 import { Tabs } from "@/components/Tabs";
 import { useEffect, useRef, useState } from "react";
 import { VibePicker } from "@/components/VibePicker";
@@ -107,19 +108,11 @@ export function VibeChooser() {
     setPending(true);
     setError(null);
     try {
-      const response = await fetch("/api/progression", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ vibeIds: getSelectedVibes(source).map((vibe) => vibe.id), variation: mode }),
+      const payload = await vibeService.generate({
+        vibeIds: getSelectedVibes(source).map((vibe) => vibe.id), variation: mode,
       });
-      const payload: unknown = await response.json();
-      if (!response.ok || typeof payload !== "object" || payload === null || !("chords" in payload) || !Array.isArray(payload.chords)) {
-        const message = typeof payload === "object" && payload !== null && "error" in payload && typeof payload.error === "string"
-          ? payload.error : "We couldn't generate a progression. Please try again.";
-        throw new Error(message);
-      }
-      setProgression(payload.chords as ProgressionCard[]);
-      setFallbackUsed("fallbackUsed" in payload && payload.fallbackUsed === true);
+      setProgression(payload.chords);
+      setFallbackUsed(payload.fallbackUsed);
       setGeneratedSelection(source);
       setGeneratedVariation(mode);
       setSaveMessage(null);
@@ -149,9 +142,7 @@ export function VibeChooser() {
     setSaving(true);
     setSaveMessage(null);
     try {
-      const response = await fetch("/api/vibes", { method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ vibeIds: getSelectedVibes(generatedSelection).map((vibe) => vibe.id), chords: progression.map((chord) => chord.symbol) }) });
-      if (!response.ok) throw new Error("This vibe could not be saved. Please try again.");
+      await vibeService.save({ vibeIds: getSelectedVibes(generatedSelection).map((vibe) => vibe.id), chords: progression.map((chord) => chord.symbol) });
       setSaveMessage("Vibe saved to My Vibes.");
     } catch (cause) {
       setSaveMessage(cause instanceof Error ? cause.message : "This vibe could not be saved. Please try again.");
@@ -163,6 +154,7 @@ export function VibeChooser() {
       <div className="flex items-center justify-between gap-3">
         <h2 data-intro className="text-2xl">Find your sound</h2>
       </div>
+      {isPagesMode && <p className="text-sm text-muted">Progressions use built-in musical rules. Saved vibes stay in this browser on this device.</p>}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">{getSelectedVibes(summarySelection).map((vibe) => vibe.label).join(" · ") || "No vibes selected"}</p>
         <button type="button" disabled={pending} className="min-h-11 rounded-full border border-foreground/20 px-4 text-sm disabled:opacity-50" onClick={() => choose({})}>Reset selection</button>

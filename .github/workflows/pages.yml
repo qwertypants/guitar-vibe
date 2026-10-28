@@ -1,0 +1,82 @@
+name: GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    permissions:
+      contents: read
+      pages: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Select comparison base for required checks
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            git branch --force main origin/main
+          elif [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            git branch --force main "$BEFORE_SHA"
+          else
+            git branch --force main HEAD^
+          fi
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install security scanners
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/scanners"
+          gh release download v8.30.1 --repo gitleaks/gitleaks --pattern gitleaks_8.30.1_linux_x64.tar.gz --dir "$RUNNER_TEMP/scanners"
+          tar -xzf "$RUNNER_TEMP/scanners/gitleaks_8.30.1_linux_x64.tar.gz" -C "$RUNNER_TEMP/scanners" gitleaks
+          gh release download v2.6.0 --repo google/osv-scanner --pattern osv-scanner_linux_amd64 --dir "$RUNNER_TEMP/scanners"
+          mv "$RUNNER_TEMP/scanners/osv-scanner_linux_amd64" "$RUNNER_TEMP/scanners/osv-scanner"
+          chmod +x "$RUNNER_TEMP/scanners/osv-scanner"
+          echo "$RUNNER_TEMP/scanners" >> "$GITHUB_PATH"
+          pipx install semgrep==1.180.0
+      - run: npm ci
+      - run: npm run check:task
+      - name: Verify server build
+        run: npm run build
+      - name: Build browser version
+        run: npm run build:pages
+      - uses: actions/configure-pages@v5
+        if: github.event_name != 'pull_request'
+      - uses: actions/upload-pages-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          path: out
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -2,29 +2,8 @@ import "server-only";
 import Database from "better-sqlite3";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
-import { z } from "zod";
-import { vibeCatalog } from "@/lib/vibes";
-import { progressionSchema, resolveProgression } from "@/lib/progression";
-
-export type SavedVibe = { id: number; createdAt: string; vibeIds: string[]; chords: string[] };
-const snapshotSchema = z.object({
-  vibeIds: z.array(z.string().min(1).max(64)).min(1).max(5),
-  chords: progressionSchema.shape.chords,
-}).strict();
-
-function parseSnapshot(value: unknown): { vibeIds: string[]; chords: string[] } | null {
-  const parsed = snapshotSchema.safeParse(value);
-  if (!parsed.success || parsed.data.vibeIds.length < 1 || parsed.data.vibeIds.length > 5) return null;
-  const ids = new Set<string>();
-  const facets = new Set<string>();
-  for (const id of parsed.data.vibeIds) {
-    const option = vibeCatalog.find((item) => item.id === id);
-    if (!option || ids.has(id) || facets.has(option.facet)) return null;
-    ids.add(id); facets.add(option.facet);
-  }
-  if (!resolveProgression(parsed.data.chords) || new Set(parsed.data.chords).size < 2) return null;
-  return parsed.data;
-}
+import { parseSnapshot, type SavedVibe } from "@/lib/saved-vibe";
+export type { SavedVibe } from "@/lib/saved-vibe";
 
 export function createVibesStore(filePath: string) {
   mkdirSync(path.dirname(filePath), { recursive: true });

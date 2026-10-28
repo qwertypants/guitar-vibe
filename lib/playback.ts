@@ -61,7 +61,7 @@ export class ToneGuitarPlayback implements PlaybackAudio {
           this.cancelLoading = resolve;
           this.buffers = new tone.ToneAudioBuffers({
             urls: GUITAR_SAMPLES,
-            baseUrl: "/audio/guitar-acoustic/",
+            baseUrl: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/audio/guitar-acoustic/`,
             onload: resolve,
             onerror: () => reject(new Error("Guitar samples could not load. Try playing again.")),
           });

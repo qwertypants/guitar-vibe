@@ -22,7 +22,8 @@
     "coverage": "vitest run --coverage.enabled --coverage.provider=v8 --coverage.include=lib/** --coverage.include=app/** --coverage.include=components/**",
     "check:coverage": "node scripts/check-diff-coverage.mjs",
     "check:fast": "npm run check:floor && npm run typecheck && npm run lint && npm run check:secrets",
-    "check:task": "npm run check:fast && npm run check:coverage && npm run check:security && npm run check:deps"
+    "check:task": "npm run check:fast && npm run check:coverage && npm run check:security && npm run check:deps",
+    "build:pages": "node scripts/build-pages.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -36,7 +37,7 @@
     "tone": "15.1.22",
     "vexchords": "^1.2.0",
     "vextab": "4.0.5",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",

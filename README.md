@@ -20,6 +20,52 @@ npm run dev
 
 Then open [http://localhost:3000](http://localhost:3000).
 
+## GitHub Pages
+
+The Pages version runs entirely in the browser. It uses the same trusted musical
+rules as the local model's fallback, with Familiar, Richer, and Adventurous
+variations. It does not call Ollama or require a backend. Repeating a generation
+with the same settings produces the same progression.
+
+Saved vibes use localStorage on the current browser and device. Clearing site
+data removes them. They do not sync across devices or import the local app's
+SQLite library. If browser storage is blocked, full, or damaged, the app reports
+an error and does not overwrite the existing saved data.
+
+Build the static site with:
+
+```sh
+npm ci
+npm run build:pages
+```
+
+The result is `out/`, configured for `/guitar-vibe/`. The script builds in a
+temporary directory without API routes and removes that directory afterward.
+The existing `npm run dev`, `npm run build`, `npm run start`, Docker, and Pi
+workflows continue to use Ollama and SQLite.
+
+To preview the repository path locally:
+
+```sh
+preview_dir=$(mktemp -d)
+ln -s "$PWD/out" "$preview_dir/guitar-vibe"
+python3 -m http.server 4173 --bind 127.0.0.1 --directory "$preview_dir"
+```
+
+Open [http://127.0.0.1:4173/guitar-vibe/](http://127.0.0.1:4173/guitar-vibe/).
+
+To publish, set **Settings > Pages > Build and deployment > Source** to
+**GitHub Actions** in `qwertypants/guitar-vibe`. After the workflow is committed
+and pushed to `main`, it runs the required checks, verifies both builds, and
+publishes to [qwertypants.github.io/guitar-vibe](https://qwertypants.github.io/guitar-vibe/).
+Pull requests run checks and builds without deploying. You can also run the
+**GitHub Pages** workflow manually on `main`. Repository visibility and your
+GitHub plan must permit Pages hosting.
+
+Only the deploy job has Pages write and OIDC permissions. No API keys or database
+files are included in the artifact. To roll back, revert the relevant change on
+`main` and let the workflow publish the previous behavior again.
+
 ## Prerequisites
 
 - [Node.js](https://nodejs.org) 22 or newer

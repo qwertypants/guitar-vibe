@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
+import { isPagesMode, vibeService } from "@/lib/client/vibe-service";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import Flip from "gsap/Flip";
@@ -12,7 +13,7 @@ import { UiIcon } from "@/components/UiIcon";
 import { filterVibes } from "@/lib/vibes-filter";
 import { vibeCatalog, vibeFacets } from "@/lib/vibes";
 import { resolveChord, type ChordVoicing } from "@/lib/voicings";
-import type { SavedVibe } from "@/lib/server/vibes-store";
+import type { SavedVibe } from "@/lib/saved-vibe";
 
 gsap.registerPlugin(Flip);
 
@@ -37,10 +38,7 @@ export const MyVibesLibrary = ({ createController = () => new PlaybackController
 
   const fetchEntries = useCallback(async () => {
     try {
-      const response = await fetch("/api/vibes");
-      const payload: unknown = await response.json();
-      if (!response.ok || typeof payload !== "object" || payload === null || !("vibes" in payload) || !Array.isArray(payload.vibes)) throw new Error();
-      setEntries(payload.vibes as SavedVibe[]);
+      setEntries(await vibeService.list());
       setMessage("");
     } catch { setMessage("Saved vibes could not be loaded. Refresh to try again."); }
   }, []);
@@ -68,8 +66,7 @@ export const MyVibesLibrary = ({ createController = () => new PlaybackController
   const remove = async (entry: SavedVibe) => {
     if (!window.confirm("Delete this saved vibe?")) return;
     try {
-      const response = await fetch(`/api/vibes/${entry.id}`, { method: "DELETE" });
-      if (!response.ok) throw new Error();
+      await vibeService.delete(entry.id);
       if (!reducedMotion()) {
         const row = list.current?.querySelector<HTMLElement>(`[data-vibe-id="${entry.id}"]`);
         if (row) await gsap.to(row, { autoAlpha: 0, y: 8, duration: 0.18 }).then();
@@ -109,6 +106,7 @@ export const MyVibesLibrary = ({ createController = () => new PlaybackController
     <header className="space-y-2 border-b border-foreground/15 pb-5">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Your saved progressions</p>
       <h1 id="my-vibes-title" className="text-4xl font-normal tracking-tight sm:text-5xl">My Vibes</h1>
+      {isPagesMode && <p className="text-sm text-muted">Saved in this browser on this device. Clearing site data removes these vibes.</p>}
       <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-base text-muted">Settings and chords from the progressions you chose to save.</p>
         <Link href="/" className="min-h-11 inline-flex items-center rounded-full px-4 text-sm font-medium text-accent hover:bg-accent/10">Play</Link></div>
     </header>
