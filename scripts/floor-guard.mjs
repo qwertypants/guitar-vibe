@@ -5,6 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import ts from "typescript";
 
 const i = process.argv.indexOf("--base");
 const base = i > -1 ? process.argv[i + 1] : "main";
@@ -74,8 +75,35 @@ for (const { file, text } of added) {
   if (/CONSTRAINTS\.md$/.test(file) && /^\| *(W|E)\d+ *\|/.test(text)) flag("new-exception", file, text);
 }
 
-// Assertion migrations are reviewed individually. A record can only exempt its
-// exact removed line when all declared replacement lines exist in the same diff.
+// A registry record declares a migration; it does not prove semantic equivalence.
+// Only executable assertions with unchanged matcher chains qualify for review.
+const assertionSignature = (text) => {
+  const source = ts.createSourceFile("assertion.tsx", text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  if (source.parseDiagnostics.length || source.statements.length !== 1 || !ts.isExpressionStatement(source.statements[0])) return null;
+  let expression = source.statements[0].expression;
+  let wrapper = "";
+  if (ts.isAwaitExpression(expression)) {
+    wrapper = "await ";
+    expression = expression.expression;
+  }
+  if (ts.isCallExpression(expression) && ts.isIdentifier(expression.expression) && expression.expression.text === "waitFor") {
+    const callback = expression.arguments[0];
+    if (expression.arguments.length !== 1 || !callback || !ts.isArrowFunction(callback) || callback.parameters.length || ts.isBlock(callback.body)) return null;
+    wrapper += "waitFor ";
+    expression = callback.body;
+  }
+  if (!ts.isCallExpression(expression) || expression.questionDotToken) return null;
+  const argumentCount = expression.arguments.length;
+  const matcher = [];
+  let receiver = expression.expression;
+  while (ts.isPropertyAccessExpression(receiver) && !receiver.questionDotToken) {
+    matcher.unshift(receiver.name.text);
+    receiver = receiver.expression;
+  }
+  if (!matcher.length || !ts.isCallExpression(receiver) || receiver.questionDotToken ||
+    !ts.isIdentifier(receiver.expression) || receiver.expression.text !== "expect" || receiver.arguments.length !== 1) return null;
+  return `${wrapper}${matcher.join(".")}(${argumentCount})`;
+};
 const replacementPath = join(process.cwd(), ".constraint-assertion-replacements.json");
 let replacements = [];
 if (existsSync(replacementPath)) {
@@ -98,6 +126,8 @@ const usedReplacementLines = new Map();
 for (const entry of replacements) {
   const oldLines = removed.filter((line) => line.file === entry.file && line.text.trim() === entry.removed);
   if (!oldLines.length) continue;
+  const signature = assertionSignature(entry.removed);
+  if (!signature || signature !== assertionSignature(entry.replacement)) continue;
   const newLines = added.filter((line) => line.file === entry.file && line.text.trim() === entry.replacement);
   const replacementKey = `${entry.file}\n${entry.replacement}`;
   const used = usedReplacementLines.get(replacementKey) ?? 0;
@@ -123,8 +153,14 @@ for (const r of removedConstraints) {
 }
 
 if (findings.length === 0) {
-  for (const entry of acceptedReplacements.values()) console.log(`floor-guard: tracked assertion replacement ${entry.id} (${entry.count} line(s), owner ${entry.owner}, expires ${entry.expires})`);
-  console.log("floor-guard: clean");
+  for (const entry of acceptedReplacements.values()) {
+    console.log(`floor-guard: tracked assertion replacement ${entry.id} (${entry.count} line(s), owner ${entry.owner}, expires ${entry.expires})`);
+    console.log(`  [assertion-migration-review] ${entry.file}: requires review for semantic equivalence`);
+    console.log(`    removed: ${entry.removed}`);
+    console.log(`    replacement: ${entry.replacement}`);
+    console.log(`    reason: ${entry.reason}`);
+  }
+  console.log(acceptedReplacements.size ? "floor-guard: no blocking violations; each assertion migration above requires review" : "floor-guard: clean");
   process.exit(0);
 }
 console.error(`floor-guard: ${findings.length} floor violation(s):`);

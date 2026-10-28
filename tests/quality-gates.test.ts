@@ -13,7 +13,7 @@ const entry = {
   owner: "quality-gate test", expires: "2999-12-31",
 };
 
-test.each([
+const cases: { name: string; registry?: unknown; before?: string; after: string; expected: number }[] = [
   { name: "unregistered assertion removal", registry: undefined, after: replacement, expected: 1 },
   { name: "exact reviewed assertion replacement", registry: [entry], after: replacement, expected: 0 },
   { name: "missing replacement assertion", registry: [entry], after: "", expected: 1 },
@@ -24,7 +24,20 @@ test.each([
   { name: "invalid replacement registry", registry: {}, after: replacement, expected: 2 },
   { name: "additional unregistered removal", registry: [entry], before: `${previous}\nexpect(otherButton).toBeEnabled();`, after: replacement, expected: 1 },
   { name: "a replacement cannot cover two different removals", registry: [entry, { ...entry, id: "other-control", removed: "expect(otherButton).toBeDisabled();" }], before: `${previous}\nexpect(otherButton).toBeDisabled();`, after: replacement, expected: 1 },
-])("floor guard enforces $name", ({ registry, before = previous, after, expected }) => {
+  ...[
+    'console.log("coverage removed");',
+    `console.log(${JSON.stringify(replacement)});`,
+    `// ${replacement}`,
+    `${JSON.stringify(replacement)};`,
+    `() => ${replacement}`,
+    `false && ${replacement}`,
+    "expect(variationButton).toBeTruthy();",
+    `if (false) { ${replacement} }`,
+  ].map((after) => ({ name: `non-equivalent replacement ${after}`, registry: [{ ...entry, replacement: after }], before: previous, after, expected: 1 })),
+  { name: "removed negation", registry: [{ ...entry, removed: "expect(button).not.toBeDisabled();" }], before: "expect(button).not.toBeDisabled();", after: replacement, expected: 1 },
+];
+
+test.each(cases)("floor guard enforces $name", ({ registry, before = previous, after, expected }) => {
   const cwd = mkdtempSync(join(tmpdir(), "guitar-vibe-floor-"));
   try {
     mkdirSync(join(cwd, "tests"));
@@ -38,7 +51,14 @@ test.each([
     const result = spawnSync(process.execPath, [guard], { cwd, encoding: "utf8" });
     expect(result.status, result.stderr).toBe(expected);
     if (expected === 1) expect(result.stderr).toContain("[assertion-removed]");
-    if (expected === 0) expect(result.stdout).toContain("tracked assertion replacement renamed-control (1 line(s)");
+    if (expected === 0) {
+      expect(result.stdout).toContain("tracked assertion replacement renamed-control (1 line(s)");
+      expect(result.stdout).toContain("[assertion-migration-review]");
+      expect(result.stdout).toContain(`removed: ${previous}`);
+      expect(result.stdout).toContain(`replacement: ${replacement}`);
+      expect(result.stdout).toContain(entry.reason);
+      expect(result.stdout).toContain("requires review");
+    }
     if (expected === 2) expect(result.stderr).toContain("invalid assertion replacement registry");
   } finally {
     rmSync(cwd, { recursive: true, force: true });
