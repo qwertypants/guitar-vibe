@@ -68,5 +68,125 @@
     "reason": "Task 5 extends the save request with the full session collection; the replacement asserts the complete extended body while retaining creation facets and original chord checks.",
     "owner": "guitar-vibe maintainers",
     "expires": "2026-11-28"
+  },
+  {
+    "id": "progression-tabs-hidden-headings",
+    "file": "tests/progression-comparison.test.tsx",
+    "removed": "expect(screen.getAllByRole(\"heading\", { level: 3 }).map((heading) => heading.textContent)).toEqual([\"Original\", \"Variation 1 · Dark\", \"Variation 2 · Surprise\"]);",
+    "replacement": "expect(screen.getAllByRole(\"heading\", { level: 3, hidden: true }).map((heading) => heading.textContent)).toEqual([\"Original\", \"Variation 1 · Dark\", \"Variation 2 · Surprise\"]);",
+    "count": 1,
+    "reason": "Tabbed comparison keeps every progression mounted for guitar-position state but hides inactive panels. The assertion still checks all three headings and their order.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "tab-query-9",
+    "file": "tests/page.test.tsx",
+    "removed": "expect(await screen.findByText(\"Variation 1 · Dreamy\")).toBeVisible();",
+    "replacement": "expect(await screen.findByRole(\"tab\", { name: \"Variation 1 · Dreamy\" })).toBeVisible();",
+    "count": 1,
+    "reason": "Progression names now appear in tabs and headings; the tab assertion verifies the named option is available or visible.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "tab-query-10",
+    "file": "tests/page.test.tsx",
+    "removed": "expect(await screen.findByText(\"Variation 1 · Dark\")).toBeVisible();",
+    "replacement": "expect(await screen.findByRole(\"tab\", { name: \"Variation 1 · Dark\" })).toBeVisible();",
+    "count": 1,
+    "reason": "Progression names now appear in tabs and headings; the tab assertion verifies the named option is available or visible.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "tab-query-11",
+    "file": "tests/page.test.tsx",
+    "removed": "expect(screen.getByText(\"Variation 1 · Dark\")).toBeVisible();",
+    "replacement": "expect(screen.getByRole(\"tab\", { name: \"Variation 1 · Dark\" })).toBeVisible();",
+    "count": 2,
+    "reason": "Progression names now appear in tabs and headings; the tab assertion verifies the named option is available or visible.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "tab-query-12",
+    "file": "tests/page.test.tsx",
+    "removed": "expect(await screen.findByText(\"Variation 2 · Surprise\")).toBeVisible();",
+    "replacement": "expect(await screen.findByRole(\"tab\", { name: \"Variation 2 · Surprise\" })).toBeVisible();",
+    "count": 1,
+    "reason": "Progression names now appear in tabs and headings; the tab assertion verifies the named option is available or visible.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "tab-query-14",
+    "file": "tests/page.test.tsx",
+    "removed": "expect(screen.getAllByRole(\"heading\", { level: 3 }).map((heading) => heading.textContent)).toEqual([\"Original\", \"Variation 1 · Dreamy\", \"Variation 2 · Surprise\"]);",
+    "replacement": "expect(screen.getAllByRole(\"heading\", { level: 3, hidden: true }).map((heading) => heading.textContent)).toEqual([\"Original\", \"Variation 1 · Dreamy\", \"Variation 2 · Surprise\"]);",
+    "count": 1,
+    "reason": "Progression names now appear in tabs and headings; the tab assertion verifies the named option is available or visible.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "tab-query-15",
+    "file": "tests/pages-ui.test.tsx",
+    "removed": "expect(await screen.findByText(\"Variation 1 · Dreamy\")).toBeVisible();",
+    "replacement": "expect(await screen.findByRole(\"tab\", { name: \"Variation 1 · Dreamy\" })).toBeVisible();",
+    "count": 2,
+    "reason": "Progression names now appear in tabs and headings; the tab assertion verifies the named option is available or visible.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "tab-query-16",
+    "file": "tests/pages-ui.test.tsx",
+    "removed": "expect(await screen.findByText(\"Variation 2 · Surprise\")).toBeVisible();",
+    "replacement": "expect(await screen.findByRole(\"tab\", { name: \"Variation 2 · Surprise\" })).toBeVisible();",
+    "count": 2,
+    "reason": "Progression names now appear in tabs and headings; the tab assertion verifies the named option is available or visible.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "tab-query-17",
+    "file": "tests/pages-ui.test.tsx",
+    "removed": "expect(screen.getByText(\"Variation 1 · Dreamy\")).toBeVisible();",
+    "replacement": "expect(screen.getByRole(\"tab\", { name: \"Variation 1 · Dreamy\" })).toBeVisible();",
+    "count": 4,
+    "reason": "Progression names now appear in tabs and headings; the tab assertion verifies the named option is available or visible.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "tab-query-19",
+    "file": "tests/pages-ui.test.tsx",
+    "removed": "expect(screen.getByText(\"Variation 2 · Surprise\")).toBeVisible();",
+    "replacement": "expect(screen.getByRole(\"tab\", { name: \"Variation 2 · Surprise\" })).toBeVisible();",
+    "count": 1,
+    "reason": "Progression names now appear in tabs and headings; the tab assertion verifies the named option is available or visible.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "tab-query-20",
+    "file": "tests/pages-ui.test.tsx",
+    "removed": "expect(screen.getAllByRole(\"heading\", { level: 3 }).map((heading) => heading.textContent)).toEqual([\"Original\", \"Variation 1 · Dreamy\", \"Variation 2 · Surprise\"]);",
+    "replacement": "expect(screen.getAllByRole(\"heading\", { level: 3, hidden: true }).map((heading) => heading.textContent)).toEqual([\"Original\", \"Variation 1 · Dreamy\", \"Variation 2 · Surprise\"]);",
+    "count": 1,
+    "reason": "Progression names now appear in tabs and headings; the tab assertion verifies the named option is available or visible.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
+  },
+  {
+    "id": "saved-chords-tab-loop",
+    "file": "tests/page.test.tsx",
+    "removed": "for (const chords of [\"C · F · G\", \"Am · F · C\", \"Dm · G · C\"]) expect(screen.getByText(chords)).toBeVisible();",
+    "replacement": "for (const [label, chords] of ([[\"Original\", \"C · F · G\"], [\"Variation 1 · Dreamy\", \"Am · F · C\"], [\"Variation 2 · Surprise\", \"Dm · G · C\"]] as const)) { fireEvent.click(screen.getByRole(\"tab\", { name: label })); expect(screen.getByText(chords)).toBeVisible(); }",
+    "count": 1,
+    "reason": "Each saved chord sequence is still asserted visible after selecting its progression tab.",
+    "owner": "guitar-vibe maintainers",
+    "expires": "2026-11-28"
   }
 ]

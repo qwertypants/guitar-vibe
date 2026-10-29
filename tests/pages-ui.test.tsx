@@ -19,17 +19,18 @@ test("browser generation saves to My Vibes, filters, reloads, and deletes withou
   await screen.findByRole("button", { name: "Generate mood variation" });
   expect(screen.queryByText(/trusted fallback/)).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Generate mood variation" }));
-  expect(await screen.findByText("Variation 1 · Dreamy")).toBeVisible();
+  expect(await screen.findByRole("tab", { name: "Variation 1 · Dreamy" })).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
-  expect(await screen.findByText("Variation 2 · Surprise")).toBeVisible();
-  expect(screen.getByText("Variation 1 · Dreamy")).toBeVisible();
+  expect(await screen.findByRole("tab", { name: "Variation 2 · Surprise" })).toBeVisible();
+  expect(screen.getByRole("tab", { name: "Variation 1 · Dreamy" })).toBeVisible();
   await waitFor(() => expect(screen.getByRole("button", { name: "Save vibe" })).toBeEnabled());
   vi.spyOn(Storage.prototype, "setItem").mockImplementationOnce(() => { throw new Error("Browser storage is full. Clear space and retry."); });
   fireEvent.click(screen.getByRole("button", { name: "Save vibe" }));
   expect(await screen.findByText("Browser storage is full. Clear space and retry.")).toHaveAttribute("role", "status");
+  fireEvent.click(screen.getByRole("tab", { name: "Original" }));
   expect(screen.getByRole("region", { name: "Original" })).toBeVisible();
-  expect(screen.getByText("Variation 1 · Dreamy")).toBeVisible();
-  expect(screen.getByText("Variation 2 · Surprise")).toBeVisible();
+  expect(screen.getByRole("tab", { name: "Variation 1 · Dreamy" })).toBeVisible();
+  expect(screen.getByRole("tab", { name: "Variation 2 · Surprise" })).toBeVisible();
   expect(localStorage.getItem(BROWSER_VIBES_KEY)).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Save vibe" }));
   await screen.findByText("Vibe saved to My Vibes.");
@@ -52,9 +53,10 @@ test("browser generation saves to My Vibes, filters, reloads, and deletes withou
   render(<MyVibesLibrary />);
   await screen.findByRole("button", { name: "Delete" });
   fireEvent.click(screen.getByRole("button", { name: "Open saved vibe" }));
-  expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["Original", "Variation 1 · Dreamy", "Variation 2 · Surprise"]);
+  expect(screen.getAllByRole("heading", { level: 3, hidden: true }).map((heading) => heading.textContent)).toEqual(["Original", "Variation 1 · Dreamy", "Variation 2 · Surprise"]);
   expect(screen.getByText(stored.vibes[0].progressions.original.chords.join(" · "))).toBeVisible();
   for (const entry of stored.vibes[0].progressions.variations) {
+    fireEvent.click(screen.getByRole("tab", { name: entry.label }));
     expect(within(screen.getByRole("region", { name: entry.label })).getByRole("button", { name: "Play progression" })).toBeEnabled();
     expect(screen.getAllByText(entry.chords.join(" · ")).length).toBeGreaterThan(0);
   }
@@ -78,16 +80,18 @@ test("a failed Pages variation retains the original and earlier alternatives, th
   fireEvent.click(screen.getByRole("button", { name: "Moody" }));
   fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
   fireEvent.click(await screen.findByRole("button", { name: "Generate mood variation" }));
-  expect(await screen.findByText("Variation 1 · Dreamy")).toBeVisible();
+  expect(await screen.findByRole("tab", { name: "Variation 1 · Dreamy" })).toBeVisible();
   vi.spyOn(builtin, "getFallbackProgression").mockReturnValueOnce(["unknown", "F", "G"]);
   fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
   await waitFor(() => expect(screen.getAllByRole("alert").some((alert) => alert.textContent === "This progression could not be played.")).toBe(true));
-  expect(screen.getByText("Variation 1 · Dreamy")).toBeVisible();
+  expect(screen.getByRole("tab", { name: "Variation 1 · Dreamy" })).toBeVisible();
+  fireEvent.click(screen.getByRole("tab", { name: "Original" }));
   expect(within(screen.getByRole("region", { name: "Original" })).getByRole("button", { name: "Play C, Open position" })).toBeEnabled();
+  fireEvent.click(screen.getByRole("tab", { name: "Variation 1 · Dreamy" }));
   expect(within(screen.getByRole("region", { name: "Variation 1 · Dreamy" })).getByRole("button", { name: "Play progression" })).toBeEnabled();
   expect(screen.queryByText(/Variation 2/)).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
-  expect(await screen.findByText("Variation 2 · Surprise")).toBeVisible();
-  expect(screen.getByText("Variation 1 · Dreamy")).toBeVisible();
+  expect(await screen.findByRole("tab", { name: "Variation 2 · Surprise" })).toBeVisible();
+  expect(screen.getByRole("tab", { name: "Variation 1 · Dreamy" })).toBeVisible();
   expect(fetch).not.toHaveBeenCalled();
 });

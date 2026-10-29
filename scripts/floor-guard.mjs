@@ -79,9 +79,16 @@ for (const { file, text } of added) {
 // Only executable assertions with unchanged matcher chains qualify for review.
 const assertionSignature = (text) => {
   const source = ts.createSourceFile("assertion.tsx", text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  if (source.parseDiagnostics.length || source.statements.length !== 1 || !ts.isExpressionStatement(source.statements[0])) return null;
-  let expression = source.statements[0].expression;
+  if (source.parseDiagnostics.length || source.statements.length !== 1) return null;
+  let statement = source.statements[0];
   let wrapper = "";
+  if (ts.isForOfStatement(statement)) {
+    wrapper = "for-of ";
+    statement = ts.isBlock(statement.statement)
+      ? statement.statement.statements.at(-1) : statement.statement;
+  }
+  if (!statement || !ts.isExpressionStatement(statement)) return null;
+  let expression = statement.expression;
   if (ts.isAwaitExpression(expression)) {
     wrapper = "await ";
     expression = expression.expression;

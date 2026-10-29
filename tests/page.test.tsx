@@ -114,8 +114,9 @@ test("a mood variation uses the original Play context and appends without replac
   expect(within(screen.getByRole("region", { name: "Original" })).getByRole("button", { name: "Play Am, Open position" })).toBeVisible();
   finishReVibe?.(Response.json({ chords: second }));
   await waitFor(() => expect(within(screen.getByRole("region", { name: "Variation 1 · Dreamy" })).getByRole("button", { name: "Play C, Open position" })).toBeVisible());
-  expect(await screen.findByText("Variation 1 · Dreamy")).toBeVisible();
+  expect(await screen.findByRole("tab", { name: "Variation 1 · Dreamy" })).toBeVisible();
   expect(screen.getByText("C · G · Am")).toBeVisible();
+  fireEvent.click(screen.getByRole("tab", { name: "Original" }));
   expect(within(screen.getByRole("region", { name: "Original" })).getByRole("button", { name: "Play Am, Open position" })).toBeVisible();
   expect(screen.getByRole("button", { name: "Generate mood variation" })).toBeEnabled();
   expect(screen.getByRole("tabpanel", { name: "Play" })).toHaveTextContent("Moody");
@@ -230,16 +231,19 @@ test("successive mood and surprise actions retain earlier options through invali
   const moodButton = await screen.findByRole("button", { name: "Generate mood variation" });
   fireEvent.click(screen.getByRole("radio", { name: "Dark" }));
   fireEvent.click(moodButton);
-  expect(await screen.findByText("Variation 1 · Dark")).toBeVisible();
+  expect(await screen.findByRole("tab", { name: "Variation 1 · Dark" })).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
   await waitFor(() => expect(screen.getAllByRole("alert").some((alert) => alert.textContent === "This progression could not be played.")).toBe(true));
-  expect(screen.getByText("Variation 1 · Dark")).toBeVisible();
+  expect(screen.getByRole("tab", { name: "Variation 1 · Dark" })).toBeVisible();
   expect(screen.queryByText(/Variation 2/)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("tab", { name: "Original" }));
   expect(within(screen.getByRole("region", { name: "Original" })).getByRole("button", { name: "Play C, Open position" })).toBeEnabled();
   fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
-  expect(await screen.findByText("Variation 2 · Surprise")).toBeVisible();
-  expect(screen.getByText("Variation 1 · Dark")).toBeVisible();
+  expect(await screen.findByRole("tab", { name: "Variation 2 · Surprise" })).toBeVisible();
+  expect(screen.getByRole("tab", { name: "Variation 1 · Dark" })).toBeVisible();
+  fireEvent.click(screen.getByRole("tab", { name: "Variation 1 · Dark" }));
   expect(screen.getByText("Am · F · C")).toBeVisible();
+  fireEvent.click(screen.getByRole("tab", { name: "Variation 2 · Surprise" }));
   expect(screen.getByText("Dm · G · C")).toBeVisible();
   expect(fetch).toHaveBeenCalledTimes(4);
   for (const index of [2, 3]) expect(JSON.parse(String(fetch.mock.calls[index]?.[1]?.body))).toEqual({
@@ -268,16 +272,19 @@ test("saves the complete server session after a failed save and reloads every pr
   fireEvent.click(screen.getByRole("button", { name: "Moody" }));
   fireEvent.click(screen.getByRole("button", { name: "Generate progression" }));
   fireEvent.click(await screen.findByRole("button", { name: "Generate mood variation" }));
-  await screen.findByText("Variation 1 · Dreamy");
+  await screen.findByRole("tab", { name: "Variation 1 · Dreamy" });
   fireEvent.click(screen.getByRole("button", { name: "Surprise variation" }));
-  await screen.findByText("Variation 2 · Surprise");
+  await screen.findByRole("tab", { name: "Variation 2 · Surprise" });
   fireEvent.click(screen.getByRole("button", { name: "Edit vibe" }));
   fireEvent.click(screen.getByRole("button", { name: "Dreamy" }));
   fireEvent.click(screen.getByRole("tab", { name: "Play" }));
   fireEvent.click(screen.getByRole("button", { name: "Save vibe" }));
   expect(await screen.findByText("Storage unavailable. Try again.")).toHaveAttribute("role", "status");
+  fireEvent.click(screen.getByRole("tab", { name: "Original" }));
   expect(screen.getByText("C · F · G")).toBeVisible();
+  fireEvent.click(screen.getByRole("tab", { name: "Variation 1 · Dreamy" }));
   expect(screen.getByText("Am · F · C")).toBeVisible();
+  fireEvent.click(screen.getByRole("tab", { name: "Variation 2 · Surprise" }));
   expect(screen.getByText("Dm · G · C")).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Save vibe" }));
   expect(screen.getByRole("button", { name: "Saving…" })).toBeDisabled();
@@ -294,6 +301,6 @@ test("saves the complete server session after a failed save and reloads every pr
   view.unmount();
   render(<MyVibesLibrary />);
   fireEvent.click(await screen.findByRole("button", { name: "Open saved vibe" }));
-  expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["Original", "Variation 1 · Dreamy", "Variation 2 · Surprise"]);
-  for (const chords of ["C · F · G", "Am · F · C", "Dm · G · C"]) expect(screen.getByText(chords)).toBeVisible();
+  expect(screen.getAllByRole("heading", { level: 3, hidden: true }).map((heading) => heading.textContent)).toEqual(["Original", "Variation 1 · Dreamy", "Variation 2 · Surprise"]);
+  for (const [label, chords] of ([["Original", "C · F · G"], ["Variation 1 · Dreamy", "Am · F · C"], ["Variation 2 · Surprise", "Dm · G · C"]] as const)) { fireEvent.click(screen.getByRole("tab", { name: label })); expect(screen.getByText(chords)).toBeVisible(); }
 });
