@@ -1,5 +1,5 @@
 import "server-only";
-import { getFallbackProgression } from "@/lib/builtin-progression";
+import { getFallbackProgression, hasSpanishInfluence } from "@/lib/builtin-progression";
 import { z } from "zod";
 import { SUPPORTED_CHORDS } from "@/lib/chords";
 import { assessProgressionHarmony } from "@/lib/harmony";
@@ -40,7 +40,9 @@ export function buildLocalModelPromptForVariation(labels: readonly string[], var
     : variation === "richer" ? "favor seventh chords and suspended colors"
       : "favor a wider mix of supported chord qualities and more varied root motion";
   return LOCAL_MODEL_PROMPT_TEMPLATE.replace("{selected vibe labels}", labels.join("\n"))
-    .replace("{variation mode}", `${variation}; ${preference}`);
+    .replace("{variation mode}", `${variation}; ${preference}`) + (hasSpanishInfluence(labels)
+      ? "\nFor the Spanish and flamenco influence, favor Andalusian descending minor harmony (i-bVII-bVI-V), a major V, and the bVI-to-V semitone resolution. Keep this character across variation modes; use supported seventh or suspended colors sparingly. These are harmonic cues, not a request for rhythmic notation."
+      : "");
 }
 export function selectProgressionCandidate(rawCandidates: readonly unknown[], variation: VariationMode,
   allowBlues = false, resolver: typeof resolveProgression = resolveProgression): { chords: string[]; usableCandidates: number } | null {

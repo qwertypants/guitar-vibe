@@ -21,11 +21,11 @@ describe("the local vibe catalog", () => {
       "Mood", "Genre", "Era", "Setting", "Energy",
     ]);
     const expected = {
-      mood: ["Moody", "Dreamy", "Warm", "Melancholy", "Hopeful", "Romantic", "Dark", "Joyful", "Restless", "Peaceful", "Tense", "Nostalgic"],
-      genre: ["R&B", "Neo-soul", "Blues", "Jazz", "Indie", "Folk", "Pop", "Rock", "Funk", "Lo-fi", "Gospel", "Country"],
+      mood: ["Moody", "Dreamy", "Warm", "Melancholy", "Hopeful", "Romantic", "Dark", "Joyful", "Restless", "Peaceful", "Tense", "Nostalgic", "Passionate"],
+      genre: ["R&B", "Neo-soul", "Blues", "Jazz", "Indie", "Folk", "Pop", "Rock", "Funk", "Lo-fi", "Gospel", "Country", "Flamenco", "Spanish guitar"],
       era: ["60s", "70s", "80s", "90s", "2000s", "Modern"],
-      setting: ["Rainy night", "Late-night drive", "Sunday morning", "Campfire", "Coffee shop", "City lights", "Bedroom", "Beach sunset", "Open road", "After-hours", "First dance", "Porch swing"],
-      energy: ["Gentle", "Laid-back", "Steady", "Uplifting", "Driving", "Intense"],
+      setting: ["Rainy night", "Late-night drive", "Sunday morning", "Campfire", "Coffee shop", "City lights", "Bedroom", "Beach sunset", "Open road", "After-hours", "First dance", "Porch swing", "Seville courtyard", "Granada twilight", "Flamenco tablao"],
+      energy: ["Gentle", "Laid-back", "Steady", "Uplifting", "Driving", "Intense", "Fiery"],
     };
     for (const facet of vibeFacets) {
       expect(vibeCatalog.filter((item) => item.facet === facet.id).map((item) => item.label))
@@ -42,6 +42,12 @@ describe("the local vibe catalog", () => {
     expect(searchVibes("Genre")).toEqual(vibeCatalog.filter((item) => item.facet === "genre"));
     expect(searchVibes("no catalog match")).toEqual([]);
     expect(searchVibes("   ")).toEqual(vibeCatalog);
+  });
+
+  test("finds Spanish genres and settings by country and local names", () => {
+    expect(searchVibes("spain")).toHaveLength(5);
+    expect(searchVibes("sevilla").map((item) => item.id)).toEqual(["setting-seville-courtyard"]);
+    expect(searchVibes("fuego").map((item) => item.id)).toEqual(["energy-fiery"]);
   });
 
   test("a data-only addition participates in search without returning prompt terms", () => {

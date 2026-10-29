@@ -17,6 +17,18 @@ beforeEach(() => { vi.stubGlobal("fetch", network); network.mockReset(); vi.stub
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.useRealTimers(); });
 
 describe("local generation", () => {
+  it.each(["genre-flamenco", "genre-spanish-guitar", "setting-seville-courtyard", "setting-granada-twilight", "setting-flamenco-tablao"])("guides Spanish selection %s through inference and playable fallback", async (id) => {
+    for (const variation of ["familiar", "richer", "adventurous"] as const) {
+      network.mockResolvedValue(Response.json(envelope(JSON.stringify(candidateSet([["invalid"]])))));
+      const result = await generateLocalProgressionWithFallback([id, "mood-passionate", "energy-fiery"], { variation });
+      expect(result.metrics.fallbackUsed).toBe(true);
+      expect(result.chords.at(-1)).toBe(variation === "richer" ? "E7" : "E");
+      expect(result.chords.at(-2)).toBe(variation === "richer" ? "Fmaj7" : "F");
+      expect(resolveProgression(result.chords)).not.toBeNull();
+      const body = JSON.parse(String(network.mock.calls.at(-1)![1]?.body));
+      expect(body.messages[0].content).toContain("i-bVII-bVI-V");
+    }
+  });
   it("uses one constrained request and returns validated chords and metrics", async () => {
     network.mockResolvedValue(Response.json(envelope()));
     const generated = await generateLocalProgression(ids, { seed: 42 });

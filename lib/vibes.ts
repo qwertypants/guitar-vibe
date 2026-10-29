@@ -32,6 +32,7 @@ export const vibeCatalog: readonly VibeOption[] = [
   { id: "mood-peaceful", facet: "mood", label: "Peaceful", synonyms: ["calm", "serene"] },
   { id: "mood-tense", facet: "mood", label: "Tense", synonyms: ["anxious", "suspenseful"] },
   { id: "mood-nostalgic", facet: "mood", label: "Nostalgic", synonyms: ["reminiscent", "memories"] },
+  { id: "mood-passionate", facet: "mood", label: "Passionate", synonyms: ["passion", "ardent", "fervent"] },
   { id: "genre-r-and-b", facet: "genre", label: "R&B", synonyms: ["rnb", "rhythm and blues", "r and b"] },
   { id: "genre-neo-soul", facet: "genre", label: "Neo-soul", synonyms: ["neosoul", "neo soul"] },
   { id: "genre-blues", facet: "genre", label: "Blues", synonyms: ["bluesy"] },
@@ -44,6 +45,8 @@ export const vibeCatalog: readonly VibeOption[] = [
   { id: "genre-lo-fi", facet: "genre", label: "Lo-fi", synonyms: ["lofi", "lo fi", "low fidelity"] },
   { id: "genre-gospel", facet: "genre", label: "Gospel", synonyms: ["church", "spiritual"] },
   { id: "genre-country", facet: "genre", label: "Country", synonyms: ["americana", "country music"] },
+  { id: "genre-flamenco", facet: "genre", label: "Flamenco", synonyms: ["spanish", "spain", "andalusian", "andalusia"] },
+  { id: "genre-spanish-guitar", facet: "genre", label: "Spanish guitar", synonyms: ["spain", "guitarra española", "guitarra espanola"] },
   { id: "era-60s", facet: "era", label: "60s", synonyms: ["1960s", "sixties"] },
   { id: "era-70s", facet: "era", label: "70s", synonyms: ["1970s", "seventies"] },
   { id: "era-80s", facet: "era", label: "80s", synonyms: ["1980s", "eighties"] },
@@ -62,12 +65,16 @@ export const vibeCatalog: readonly VibeOption[] = [
   { id: "setting-after-hours", facet: "setting", label: "After-hours", synonyms: ["after hours", "closing time"] },
   { id: "setting-first-dance", facet: "setting", label: "First dance", synonyms: ["wedding", "couple dance"] },
   { id: "setting-porch-swing", facet: "setting", label: "Porch swing", synonyms: ["front porch", "veranda"] },
+  { id: "setting-seville-courtyard", facet: "setting", label: "Seville courtyard", synonyms: ["sevilla", "patio", "spanish", "spain", "andalusia"] },
+  { id: "setting-granada-twilight", facet: "setting", label: "Granada twilight", synonyms: ["alhambra", "spanish", "spain", "andalusia"] },
+  { id: "setting-flamenco-tablao", facet: "setting", label: "Flamenco tablao", synonyms: ["spanish", "spain", "flamenco stage"] },
   { id: "energy-gentle", facet: "energy", label: "Gentle", synonyms: ["soft", "delicate"] },
   { id: "energy-laid-back", facet: "energy", label: "Laid-back", synonyms: ["laid back", "relaxed", "chill"] },
   { id: "energy-steady", facet: "energy", label: "Steady", synonyms: ["even", "consistent"] },
   { id: "energy-uplifting", facet: "energy", label: "Uplifting", synonyms: ["energizing", "bright"] },
   { id: "energy-driving", facet: "energy", label: "Driving", synonyms: ["propulsive", "energetic"] },
   { id: "energy-intense", facet: "energy", label: "Intense", synonyms: ["powerful", "high energy"] },
+  { id: "energy-fiery", facet: "energy", label: "Fiery", synonyms: ["fire", "fuego", "blazing"] },
 ];
 
 export function searchVibes(
