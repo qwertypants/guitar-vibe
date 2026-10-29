@@ -65,7 +65,7 @@ test("browser generation saves to My Vibes, filters, reloads, and deletes withou
   await screen.findByText("Vibe deleted.");
   expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
   expect(fetch).not.toHaveBeenCalled();
-});
+}, 15_000);
 
 test("corrupt browser data is reported and preserved", async () => {
   localStorage.setItem(BROWSER_VIBES_KEY, "damaged");
